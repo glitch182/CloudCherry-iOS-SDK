@@ -29,8 +29,8 @@ class CCSurveyViewController: UIViewController, FloatRatingViewDelegate {
     var welcomeText = String()
     var thankYouText = String()
     
-    var questionID = [String]()
-    var questionText = [String]()
+    var questionIDs = [String]()
+    var questionTexts = [String]()
     var questionDisplayTypes = [String]()
     var questionSequenceNumbers = [Int]()
     
@@ -78,6 +78,7 @@ class CCSurveyViewController: UIViewController, FloatRatingViewDelegate {
     var previousButton = UIButton()
     var submitButton = UIButton()
     
+    var singleLineTextField = UITextField()
     var multiLineTextView = UITextView()
     var starRatingView = FloatRatingView()
     
@@ -230,7 +231,7 @@ class CCSurveyViewController: UIViewController, FloatRatingViewDelegate {
     
     func floatRatingView(ratingView: FloatRatingView, didUpdate rating: Float) {
         
-        print(Int(self.starRatingView.rating))
+        print("Star Rating: \(Int(self.starRatingView.rating))")
         
         starRatingQuestionAnswered = true
         selectedRating = Int(self.starRatingView.rating)
@@ -376,9 +377,9 @@ class CCSurveyViewController: UIViewController, FloatRatingViewDelegate {
     
     func showQuestion() {
         
-        if (self.questionCounter <= questionText.count) {
+        if (self.questionCounter <= questionTexts.count) {
             
-            questionCounterLabel.text = "\(self.questionCounter)/\(questionText.count)"
+            questionCounterLabel.text = "\(self.questionCounter)/\(questionTexts.count)"
             
         }
         
@@ -392,7 +393,7 @@ class CCSurveyViewController: UIViewController, FloatRatingViewDelegate {
             
             faciliationTextLabel.hidden = true
             
-            headerLabel.text = questionText[self.questionCounter - 1]
+            headerLabel.text = questionTexts[self.questionCounter - 1]
             
             multiLineTextView.removeFromSuperview()
             starRatingView.removeFromSuperview()
@@ -446,7 +447,7 @@ class CCSurveyViewController: UIViewController, FloatRatingViewDelegate {
             
             starRatingView.removeFromSuperview()
             
-            headerLabel.text = questionText[self.questionCounter - 1]
+            headerLabel.text = questionTexts[self.questionCounter - 1]
             
             for aView in self.surveyView.subviews {
                 
@@ -479,7 +480,9 @@ class CCSurveyViewController: UIViewController, FloatRatingViewDelegate {
             
             self.submitResponse()
             
-            headerLabel.text = questionText[self.questionCounter - 1]
+            headerLabel.text = questionTexts[self.questionCounter - 1]
+            
+            singleLineTextField.removeFromSuperview()
             
             for aView in self.surveyView.subviews {
                 
@@ -505,7 +508,42 @@ class CCSurveyViewController: UIViewController, FloatRatingViewDelegate {
             
         case 4:
             
-            print(questionCounter)
+            self.submitResponse()
+            
+            headerLabel.text = questionTexts[self.questionCounter - 1]
+            
+            for aView in self.surveyView.subviews {
+                
+                if (aView.isKindOfClass(FloatRatingView)) {
+                    
+                    aView.removeFromSuperview()
+                    
+                }
+                
+            }
+            
+            self.surveyView.endEditing(true)
+            
+            let aSingleLineTextFieldY: CGFloat = (self.surveyView.frame.height - 40) / 2
+            
+            singleLineTextField = UITextField(frame: CGRect(x: 5, y: aSingleLineTextFieldY, width: self.surveyView.frame.width - 10, height: 40))
+            singleLineTextField.borderStyle = .Line
+            singleLineTextField.keyboardType = .Default
+            
+            self.surveyView.addSubview(singleLineTextField)
+            
+        case 5:
+            
+            self.submitResponse()
+            
+            headerLabel.text = questionTexts[self.questionCounter - 1]
+            
+            self.surveyView.endEditing(true)
+            
+            singleLineTextField.text = ""
+            singleLineTextField.keyboardType = .NumberPad
+            
+        case 6:
             
             self.submitResponse()
             
@@ -513,7 +551,7 @@ class CCSurveyViewController: UIViewController, FloatRatingViewDelegate {
             
             for aView in self.surveyView.subviews {
                 
-                if (aView.isKindOfClass(FloatRatingView)) {
+                if (aView.isKindOfClass(UITextField)) {
                     
                     aView.removeFromSuperview()
                     
@@ -560,7 +598,9 @@ class CCSurveyViewController: UIViewController, FloatRatingViewDelegate {
         
         let aRequest = NSMutableURLRequest(URL: NSURL(string: "\(_IP)\(POST_ANSWER_PARTIAL)")!)
         
-        var aSurveyResponse = [NSDictionary]()
+        var aSurveyResponse = Dictionary<String, AnyObject>()
+        var aSurveyResponseArray: Array<AnyObject> = []
+        var aCurrentQuestionAnswered = false
         
         switch (self.questionCounter) {
             
@@ -570,7 +610,9 @@ class CCSurveyViewController: UIViewController, FloatRatingViewDelegate {
             
             if (npsQuestionAnswered) {
                 
-                aSurveyResponse.append(["numberInput" : selectedRating, "questionId" : self.questionID[0], "questionText" : self.questionText[0]])
+                aCurrentQuestionAnswered = true
+                
+                aSurveyResponse = ["numberInput" : selectedRating, "questionId" : self.questionIDs[0], "questionText" : self.questionTexts[0]]
                 
             }
             
@@ -580,9 +622,11 @@ class CCSurveyViewController: UIViewController, FloatRatingViewDelegate {
             
             if (multiLineTextView.text != "") {
                 
+                aCurrentQuestionAnswered = true
+                
                 let aResponseText = multiLineTextView.text
                 
-                aSurveyResponse.append(["textInput" : aResponseText, "questionId" : self.questionID[1], "questionText" : self.questionText[1]])
+                aSurveyResponse = ["textInput" : aResponseText, "questionId" : self.questionIDs[1], "questionText" : self.questionTexts[1]]
                 
             }
             
@@ -592,7 +636,33 @@ class CCSurveyViewController: UIViewController, FloatRatingViewDelegate {
             
             if (starRatingQuestionAnswered) {
                 
-                aSurveyResponse.append(["numberInput" : selectedRating, "questionId" : self.questionID[2], "questionText" : self.questionText[2]])
+                aCurrentQuestionAnswered = true
+                
+                aSurveyResponse = ["numberInput" : selectedRating, "questionId" : self.questionIDs[2], "questionText" : self.questionTexts[2]]
+                
+            }
+            
+        case 5:
+            
+            // Single Line AlphaNumeric Text
+            
+            if (singleLineTextField.text != "") {
+            
+                aCurrentQuestionAnswered = true
+                
+                aSurveyResponse = ["textInput" : singleLineTextField.text!, "questionId" : self.questionIDs[3], "questionText" : self.questionTexts[3]]
+                
+            }
+            
+        case 6:
+            
+            // Single Line Numeric Text
+            
+            if (singleLineTextField.text != "") {
+                
+                aCurrentQuestionAnswered = true
+            
+                aSurveyResponse = ["textInput" : singleLineTextField.text!, "questionId" : self.questionIDs[4], "questionText" : self.questionTexts[4]]
                 
             }
             
@@ -602,8 +672,28 @@ class CCSurveyViewController: UIViewController, FloatRatingViewDelegate {
             
         }
         
-        let aJsonData: NSData =  try! NSJSONSerialization.dataWithJSONObject(aSurveyResponse, options: NSJSONWritingOptions.PrettyPrinted)
+        if (aCurrentQuestionAnswered) {
+            
+            if (!_PREFILL_EMAIL.isEmpty) {
+                
+                aSurveyResponse["prefillEmail"] = _PREFILL_EMAIL
+                
+            }
+            
+            if (!_PREFILL_MOBILE.isEmpty) {
+                
+                aSurveyResponse["prefillMobile"] = _PREFILL_MOBILE
+                
+            }
+            
+        }
+        
+        aSurveyResponseArray.append(aSurveyResponse)
+        
+        let aJsonData: NSData =  try! NSJSONSerialization.dataWithJSONObject(aSurveyResponseArray, options: NSJSONWritingOptions.PrettyPrinted)
         let aJsonString: String = String(data: aJsonData, encoding: NSUTF8StringEncoding)!
+        
+        print(aJsonString)
         
         let aPostData = NSMutableData(data: aJsonString.dataUsingEncoding(NSUTF8StringEncoding)!)
         
@@ -615,10 +705,20 @@ class CCSurveyViewController: UIViewController, FloatRatingViewDelegate {
             
             if let aHttpResponse = aResponse as? NSHTTPURLResponse {
                 
-                print(aHttpResponse.statusCode)
+                let aResponseStatusCode = aHttpResponse.statusCode
+                
+                print("Response Status Code: \(aResponseStatusCode)")
+                
+                if (aResponseStatusCode == 204) {
+                    
+                    print("\(self.questionDisplayTypes[self.questionCounter - 2]) Response Submitted")
+                    
+                }
                 
             } else {
+                
                 print(anError?.localizedDescription)
+                
             }
             
         }

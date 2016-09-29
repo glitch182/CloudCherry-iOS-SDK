@@ -8,13 +8,17 @@
 
 import Foundation
 
+var _IP = "https://api.getcloudcherry.com/api/"
 var _ACCESS_TOKEN = String()
 var _SURVEY_TOKEN = String()
 var _DEVICE_ID = "1234"
-var _IP = "https://api.getcloudcherry.com/api/"
+var _IS_USING_STATIC_TOKEN = Bool()
 
 var _USERNAME = String()
 var _PASSWORD = String()
+
+var _PREFILL_EMAIL = String()
+var _PREFILL_MOBILE = String()
 
 var POST_LOGIN_TOKEN = "LoginToken"
 var POST_CREATE_SURVEY_TOKEN = "SurveyToken"

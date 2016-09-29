@@ -17,8 +17,8 @@ public class CCSurvey: UIViewController {
     var welcomeText = String()
     var thankYouText = String()
     
-    var questionID = [String]()
-    var questionText = [String]()
+    var questionIDs = [String]()
+    var questionTexts = [String]()
     var questionDisplayTypes = [String]()
     var questionSequenceNumbers = [Int]()
     
@@ -62,7 +62,7 @@ public class CCSurvey: UIViewController {
         // Dispose of any resources that can be recreated.
     }
     
-    /// Sets the username and password for CloudCherry
+    /// Initializes SDK using the username and password for CloudCherry
     
     public init(iUsername: String, iPassword: String) {
         
@@ -80,9 +80,49 @@ public class CCSurvey: UIViewController {
             
             _USERNAME = iUsername
             _PASSWORD = iPassword
+            _IS_USING_STATIC_TOKEN = false
             
         }
         
+    }
+    
+    
+    /// Initializes SDK using Static token generated from Dashboard
+    
+    public init(iStaticToken: String) {
+        
+        super.init(nibName: nil, bundle: nil)
+        
+        if (iStaticToken == "") {
+            
+            print("ERROR: FAILED TO INITALIZE. STATIC TOKEN IS EMPTY")
+            
+        } else {
+            
+            _SURVEY_TOKEN = iStaticToken
+            _IS_USING_STATIC_TOKEN = true
+            
+        }
+        
+    }
+    
+    
+    /// Sets prefill details
+    
+    public func setPrefill(iEmail: String, iMobileNumber: String) {
+    
+        if (iEmail != "") {
+            
+            _PREFILL_EMAIL = iEmail
+            
+        }
+        
+        if (iMobileNumber != "") {
+            
+            
+            _PREFILL_MOBILE = iMobileNumber
+        }
+    
     }
     
     required public init?(coder aDecoder: NSCoder) {
@@ -95,28 +135,58 @@ public class CCSurvey: UIViewController {
     
     // Shows Loading Screen and logs into Cloud Cherry in the background
     
-    public func showLoading() {
+    func showLoading() {
         
-        if (_USERNAME.isEmpty || _PASSWORD.isEmpty) {
+        if (_IS_USING_STATIC_TOKEN) {
             
-            print("ERROR: FAILED TO INITALIZE. USERNAME AND PASSWORD CANNOT BE EMPTY")
+            if (_SURVEY_TOKEN.isEmpty) {
+                
+                print("ERROR: FAILED TO INITALIZE. STATIC TOKEN CANNOT BE EMPTY")
+                
+            } else {
+                
+                blackLoadingView = UIView(frame: CGRectMake(0, 0, UIScreen.mainScreen().bounds.width, UIScreen.mainScreen().bounds.height))
+                blackLoadingView.backgroundColor = UIColor.blackColor()
+                blackLoadingView.alpha = 0.75
+                
+                let aMainWindow = UIApplication.sharedApplication().delegate!.window
+                aMainWindow!!.addSubview(blackLoadingView)
+                
+                let aLoadingIndicator: UIActivityIndicatorView = UIActivityIndicatorView(frame: CGRectMake(0, 0, 50, 50))
+                aLoadingIndicator.center = CGPointMake(UIScreen.mainScreen().bounds.size.width / 2, UIScreen.mainScreen().bounds.size.height / 2)
+                aLoadingIndicator.activityIndicatorViewStyle = UIActivityIndicatorViewStyle.White
+                blackLoadingView.addSubview(aLoadingIndicator)
+                aLoadingIndicator.startAnimating()
+                
+                performSelectorInBackground(#selector(CCSurvey.getSurveyQuestions), withObject: nil)
+                
+            }
             
         } else {
             
-            blackLoadingView = UIView(frame: CGRectMake(0, 0, UIScreen.mainScreen().bounds.width, UIScreen.mainScreen().bounds.height))
-            blackLoadingView.backgroundColor = UIColor.blackColor()
-            blackLoadingView.alpha = 0.75
             
-            let aMainWindow = UIApplication.sharedApplication().delegate!.window
-            aMainWindow!!.addSubview(blackLoadingView)
-            
-            let aLoadingIndicator: UIActivityIndicatorView = UIActivityIndicatorView(frame: CGRectMake(0, 0, 50, 50))
-            aLoadingIndicator.center = CGPointMake(UIScreen.mainScreen().bounds.size.width / 2, UIScreen.mainScreen().bounds.size.height / 2)
-            aLoadingIndicator.activityIndicatorViewStyle = UIActivityIndicatorViewStyle.White
-            blackLoadingView.addSubview(aLoadingIndicator)
-            aLoadingIndicator.startAnimating()
-            
-            performSelectorInBackground(#selector(CCSurvey.loginToCloudCherry), withObject: nil)
+            if (_USERNAME.isEmpty || _PASSWORD.isEmpty) {
+                
+                print("ERROR: FAILED TO INITALIZE. USERNAME AND PASSWORD CANNOT BE EMPTY")
+                
+            } else {
+                
+                blackLoadingView = UIView(frame: CGRectMake(0, 0, UIScreen.mainScreen().bounds.width, UIScreen.mainScreen().bounds.height))
+                blackLoadingView.backgroundColor = UIColor.blackColor()
+                blackLoadingView.alpha = 0.75
+                
+                let aMainWindow = UIApplication.sharedApplication().delegate!.window
+                aMainWindow!!.addSubview(blackLoadingView)
+                
+                let aLoadingIndicator: UIActivityIndicatorView = UIActivityIndicatorView(frame: CGRectMake(0, 0, 50, 50))
+                aLoadingIndicator.center = CGPointMake(UIScreen.mainScreen().bounds.size.width / 2, UIScreen.mainScreen().bounds.size.height / 2)
+                aLoadingIndicator.activityIndicatorViewStyle = UIActivityIndicatorViewStyle.White
+                blackLoadingView.addSubview(aLoadingIndicator)
+                aLoadingIndicator.startAnimating()
+                
+                performSelectorInBackground(#selector(CCSurvey.loginToCloudCherry), withObject: nil)
+                
+            }
             
         }
         
@@ -292,7 +362,7 @@ public class CCSurvey: UIViewController {
                     let aLogoURLSplitStrings = aCompleteLogoURL.componentsSeparatedByCharactersInSet(aLogoURLDelimiters)
                     self.logoURL = aLogoURLSplitStrings[0]
                     
-                    print(aQuestions)
+//                    print(aQuestions)
                     
                     for aQuestion in aQuestions {
                         
@@ -302,8 +372,8 @@ public class CCSurvey: UIViewController {
                                 
                                 print(aQuestion)
                                 
-                                self.questionID.append(aQuestion["id"] as! String)
-                                self.questionText.append(aQuestion["text"] as! String)
+                                self.questionIDs.append(aQuestion["id"] as! String)
+                                self.questionTexts.append(aQuestion["text"] as! String)
                                 self.questionSequenceNumbers.append(aQuestion["sequence"] as! Int)
                                 
                                 let aQuestionDisplayType = aQuestion["displayType"] as! String
@@ -384,9 +454,10 @@ public class CCSurvey: UIViewController {
         aSurveyViewController.welcomeText = self.welcomeText
         aSurveyViewController.thankYouText = self.thankYouText
         
-        aSurveyViewController.questionID = self.questionID
-        aSurveyViewController.questionText = self.questionText
+        aSurveyViewController.questionIDs = self.questionIDs
+        aSurveyViewController.questionTexts = self.questionTexts
         aSurveyViewController.partialResponseID = self.partialResponseID
+        aSurveyViewController.questionDisplayTypes = self.questionDisplayTypes
         
         aSurveyViewController.headerColorCode = self.headerColorCode
         aSurveyViewController.footerColorCode = self.footerColorCode
