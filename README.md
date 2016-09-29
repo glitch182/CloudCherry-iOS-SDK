@@ -4,7 +4,7 @@ iOS SDK for CloudCherry
 
 ## Steps to Install Framework:
 
-- Drag and Drop the framework in your Xcode Project
+- Drag and Drop the framework file (```CloudCherryiOSFramework.framework```) in your Xcode Project
 
 **For Swift Projects**
 
@@ -29,19 +29,20 @@ iOS SDK for CloudCherry
 ![Image of disabling Bitcode in Project]
 (http://i.imgur.com/7WrAR7l.png)
 
-- To initialize the SDK, configure it using either Username/Password combination or by generating and using a Static Token from CloudCherry Dashboard:
-
-**Username/Password Initialization**
-
-```Swift
-let aSurvey = CCSurvey(iUsername: <Your username here>, iPassword: <Your password here>)
-```
-*OR*
+- To initialize the SDK, configure it using either by generating and using a Static Token from CloudCherry Dashboard or by using Username/Password combination (Dynamic Token):
 
 **Static Token Initialization**
 
 ```Swift
 let aSurvey = CCSurvey(iStaticToken: <Your Static Token here>)
+```
+
+*OR*
+
+**Username/Password (Dynamic Token) Initialization**
+
+```Swift
+let aSurvey = CCSurvey(iUsername: <Your username here>, iPassword: <Your password here>)
 ```
 
 **Setting up pre-fills in SDK**
