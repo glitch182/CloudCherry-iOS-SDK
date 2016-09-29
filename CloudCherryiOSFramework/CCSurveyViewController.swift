@@ -109,7 +109,8 @@ class CCSurveyViewController: UIViewController, FloatRatingViewDelegate {
         
         
         faciliationTextLabel = UILabel(frame: CGRect(x: 0, y: 10, width: surveyView.frame.width, height: 20))
-        faciliationTextLabel.font = UIFont(name: "Helvetica", size: 15)
+        faciliationTextLabel.font = UIFont(name: "Helvetica", size: 18)
+        faciliationTextLabel.numberOfLines = 2
         faciliationTextLabel.textAlignment = .Center
         faciliationTextLabel.text = self.welcomeText
         
@@ -137,8 +138,8 @@ class CCSurveyViewController: UIViewController, FloatRatingViewDelegate {
         // Setting up CC Footer
         
         
-        footerLabel = UILabel(frame: CGRect(x: 0, y: surveyView.frame.size.height - 70, width: surveyView.frame.width, height: 20))
-        footerLabel.font = UIFont(name: "Helvetica", size: 12)
+        footerLabel = UILabel(frame: CGRect(x: 0, y: surveyView.frame.size.height - 50, width: surveyView.frame.width, height: 20))
+        footerLabel.font = UIFont(name: "Helvetica", size: 11)
         footerLabel.text = "Customer Delight powered by"
         footerLabel.textAlignment = .Center
         
@@ -149,10 +150,10 @@ class CCSurveyViewController: UIViewController, FloatRatingViewDelegate {
         
         
         let aLogoImage = UIImage(named: "CCLogo", inBundle: NSBundle(forClass: self.dynamicType), compatibleWithTraitCollection: nil)
-        let aLogoImageWidth = aLogoImage?.size.width
-        let aLogoImageHeight = aLogoImage?.size.height
+        let aLogoImageWidth = (aLogoImage?.size.width)! - 10
+        let aLogoImageHeight = (aLogoImage?.size.height)! - 10
         
-        cloudCherryLogoImageView = UIImageView(frame: CGRect(x: (surveyView.frame.width - aLogoImageWidth!) / 2, y: surveyView.frame.height - 40, width: aLogoImageWidth!, height: aLogoImageHeight!))
+        cloudCherryLogoImageView = UIImageView(frame: CGRect(x: (surveyView.frame.width - aLogoImageWidth) / 2, y: surveyView.frame.height - 30, width: aLogoImageWidth, height: aLogoImageHeight))
         cloudCherryLogoImageView.contentMode = .ScaleAspectFit
         cloudCherryLogoImageView.image = aLogoImage
         
@@ -269,7 +270,7 @@ class CCSurveyViewController: UIViewController, FloatRatingViewDelegate {
             
             headerLabel = UILabel(frame: CGRect(x: 10, y: 15, width: headerView.frame.width - 20, height: 20))
             headerLabel.adjustsFontSizeToFitWidth = true
-            headerLabel.font = UIFont(name: "Helvetica", size: 12)
+            headerLabel.font = UIFont(name: "Helvetica", size: 15)
             headerLabel.textColor = UIColor.whiteColor()
             headerView.addSubview(headerLabel)
             
@@ -413,7 +414,7 @@ class CCSurveyViewController: UIViewController, FloatRatingViewDelegate {
                 aRatingButton.backgroundColor = UIColor(red: red[anIndex], green: green[anIndex], blue: blue[anIndex], alpha: 1.0)
                 aRatingButton.setTitle("\(anIndex)", forState: .Normal)
                 aRatingButton.titleLabel?.font = UIFont(name: "Helvetica", size: 11)
-                aRatingButton.addTarget(self, action: #selector(CCSurveyViewController.ratingButtonTapped(_:)), forControlEvents: .TouchUpInside)
+                aRatingButton.addTarget(self, action: #selector(CCSurveyViewController.npsRatingButtonTapped(_:)), forControlEvents: .TouchUpInside)
                 
                 surveyView.addSubview(aRatingButton)
                 
@@ -490,9 +491,9 @@ class CCSurveyViewController: UIViewController, FloatRatingViewDelegate {
                 
             }
             
-            let aStarRatingYAlign: CGFloat = (self.surveyView.frame.height / 2) - 35
+            let aStarRatingYAlign: CGFloat = (self.surveyView.frame.height - 40) / 2
             
-            starRatingView = FloatRatingView(frame: CGRect(x: 15, y: aStarRatingYAlign, width: self.surveyView.frame.width - 30, height: 40))
+            starRatingView = FloatRatingView(frame: CGRect(x: 40, y: aStarRatingYAlign, width: self.surveyView.frame.width - 80, height: 40))
             
             starRatingView.delegate = self
             starRatingView.emptyImage = UIImage(named: "StarEmpty", inBundle: NSBundle(forClass: self.dynamicType), compatibleWithTraitCollection: nil)
@@ -658,7 +659,7 @@ class CCSurveyViewController: UIViewController, FloatRatingViewDelegate {
     // Handles NPS Survey button taps
     
     
-    func ratingButtonTapped(iButton: UIButton) {
+    func npsRatingButtonTapped(iButton: UIButton) {
         
         if let aTappedButton = self.view.viewWithTag(iButton.tag) as? UIButton {
             
@@ -670,11 +671,14 @@ class CCSurveyViewController: UIViewController, FloatRatingViewDelegate {
                 
                 tappedButton.setTitleColor(UIColor.whiteColor(), forState: .Normal)
                 tappedButton.backgroundColor = UIColor(red: red[anIndex], green: green[anIndex], blue: blue[anIndex], alpha: 1.0)
+                tappedButton.layer.borderColor = UIColor.clearColor().CGColor
                 
             }
             
             aTappedButton.setTitleColor(UIColor.blackColor(), forState: .Normal)
-            aTappedButton.backgroundColor = UIColor.grayColor()
+            aTappedButton.backgroundColor = UIColor.lightGrayColor()
+            aTappedButton.layer.borderColor = UIColor.blackColor().CGColor
+            aTappedButton.layer.borderWidth = 1.0
             
             tappedButton = aTappedButton
             
