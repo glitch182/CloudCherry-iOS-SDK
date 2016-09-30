@@ -17,6 +17,42 @@ var _PARTIAL_SURVEY_COMPLETE = false
 
 import UIKit
 
+
+class headerFooterView : UIView {
+    
+    override init(frame: CGRect) {
+        
+        super.init(frame : frame)
+        
+    }
+    
+    required init?(coder aDecoder: NSCoder) {
+        
+        fatalError("init(coder:) has not been implemented")
+        
+    }
+    
+}
+
+
+class questionCounterLabel : UILabel {
+    
+    override init(frame: CGRect) {
+        
+        super.init(frame : frame)
+        
+    }
+    
+    required init?(coder aDecoder: NSCoder) {
+        
+        fatalError("init(coder:) has not been implemented")
+        
+    }
+    
+}
+
+
+
 class CCSurveyViewController: UIViewController, FloatRatingViewDelegate {
     
     
@@ -34,8 +70,13 @@ class CCSurveyViewController: UIViewController, FloatRatingViewDelegate {
     var questionDisplayTypes = [String]()
     var questionSequenceNumbers = [Int]()
     
+    var isSingleSelect = Bool()
+    var singleSelectOptions = [String]()
+    var multiSelectOptions = [String]()
+    
     var questionCounter = 0
     var primaryButtonCounter = 0
+    var showPreviousQuestion = false
     
     var partialResponseID = String()
     
@@ -45,7 +86,15 @@ class CCSurveyViewController: UIViewController, FloatRatingViewDelegate {
     
     var npsQuestionAnswered = false
     var starRatingQuestionAnswered = false
-    var selectedRating = Int()
+    var smileRatingQuestionAnswered = false
+    
+    var selectButtonMaxX = CGFloat(0)
+    var selectButtonMaxY = CGFloat(0)
+    
+    var selectedNPSRating = Int()
+    var selectedSmileRating = Int()
+    var selectedSingleSelectOption = String()
+    var selectedMultiSelectOptions = [String]()
     
     var headerColorCode = String()
     var footerColorCode = String()
@@ -54,6 +103,8 @@ class CCSurveyViewController: UIViewController, FloatRatingViewDelegate {
     var red: [CGFloat] = [234/255, 234/255, 234/255, 234/255, 234/255, 234/255, 240/255, 239/255, 239/255, 116/255, 62/255]
     var green: [CGFloat] = [15/255, 61/255, 87/255, 113/255, 127/255, 148/255, 158/255, 219/255, 243/255, 244/255, 158/255]
     var blue: [CGFloat] = [42/255, 35/255, 37/255, 40/255, 41/255, 49/255, 43/255, 54/255, 59/255, 60/255, 76/255]
+    
+    var smileyUnicodes = ["\u{1F620}", "\u{1F61E}", "\u{1F610}", "\u{1F60A}", "\u{1F60D}"]
     
     
     // MARK: - Outlets
@@ -73,7 +124,7 @@ class CCSurveyViewController: UIViewController, FloatRatingViewDelegate {
     var footerView = UIView()
     var logoImageView = UIImageView()
     
-    var questionCounterLabel = UILabel()
+    var questionCtrLabel = questionCounterLabel()
     var tappedButton = UIButton()
     var previousButton = UIButton()
     var submitButton = UIButton()
@@ -234,7 +285,7 @@ class CCSurveyViewController: UIViewController, FloatRatingViewDelegate {
         print("Star Rating: \(Int(self.starRatingView.rating))")
         
         starRatingQuestionAnswered = true
-        selectedRating = Int(self.starRatingView.rating)
+        selectedNPSRating = Int(self.starRatingView.rating)
         
     }
     
@@ -260,7 +311,7 @@ class CCSurveyViewController: UIViewController, FloatRatingViewDelegate {
             // Setting up Header View for Survey View
             
             
-            headerView = UIView(frame: CGRect(x: 0, y: 0, width: surveyView.frame.width, height: 50))
+            headerView = headerFooterView(frame: CGRect(x: 0, y: 0, width: surveyView.frame.width, height: 50))
             headerView.backgroundColor = hexStringToUIColor(headerColorCode)
             
             surveyView.addSubview(headerView)
@@ -279,7 +330,7 @@ class CCSurveyViewController: UIViewController, FloatRatingViewDelegate {
             // Setting up Footer View for Survey View
             
             
-            footerView = UIView(frame: CGRect(x: 0, y: surveyView.frame.height - 50, width: surveyView.frame.width, height: 50))
+            footerView = headerFooterView(frame: CGRect(x: 0, y: surveyView.frame.height - 50, width: surveyView.frame.width, height: 50))
             footerView.backgroundColor = hexStringToUIColor(footerColorCode)
             
             surveyView.addSubview(footerView)
@@ -299,15 +350,11 @@ class CCSurveyViewController: UIViewController, FloatRatingViewDelegate {
             // Setting up Question Counter
             
             
-            let aQuestionCounterLabelView = UIView(frame: CGRect(x: surveyView.frame.width - 60, y: surveyView.frame.height - 70, width: 50, height: 20))
+            questionCtrLabel = questionCounterLabel(frame: CGRect(x: surveyView.frame.width - 60, y: surveyView.frame.height - 70, width: 50, height: 20))
+            questionCtrLabel.font = UIFont(name: "Helvetica", size: 11)
+            questionCtrLabel.textAlignment = .Right
             
-            surveyView.addSubview(aQuestionCounterLabelView)
-            
-            questionCounterLabel = UILabel(frame: CGRect(x: 0, y: 0, width: 50, height: 20))
-            questionCounterLabel.font = UIFont(name: "Helvetica", size: 11)
-            questionCounterLabel.textAlignment = .Right
-            
-            aQuestionCounterLabelView.addSubview(questionCounterLabel)
+            surveyView.addSubview(questionCtrLabel)
             
             
             // Setting up Previous Button in Footer View
@@ -355,6 +402,10 @@ class CCSurveyViewController: UIViewController, FloatRatingViewDelegate {
         
         self.questionCounter -= 1
         
+        self.selectButtonMaxX = 0
+        
+        self.showPreviousQuestion = true
+        
         self.showQuestion()
         
     }
@@ -367,7 +418,41 @@ class CCSurveyViewController: UIViewController, FloatRatingViewDelegate {
         
         self.questionCounter += 1
         
+        self.selectButtonMaxX = 0
+        
+        self.showPreviousQuestion = false
+        
         self.showQuestion()
+        
+    }
+    
+    
+    // Handles removing subviews
+    
+    
+    func removeSubViews() {
+        
+        if ((self.questionCounter - 1 != 0) && (!self.showPreviousQuestion)) {
+            
+            self.submitResponse()
+            
+        }
+        
+        for aView in self.surveyView.subviews {
+            
+            if ((!aView.isKindOfClass(headerFooterView)) && (!aView.isKindOfClass(questionCounterLabel))) {
+                
+                aView.removeFromSuperview()
+                
+            }
+            
+        }
+        
+        if (self.questionCounter == questionTexts.count) {
+            
+            questionCtrLabel.removeFromSuperview()
+            
+        }
         
     }
     
@@ -377,26 +462,32 @@ class CCSurveyViewController: UIViewController, FloatRatingViewDelegate {
     
     func showQuestion() {
         
+        self.removeSubViews()
+        
         if (self.questionCounter <= questionTexts.count) {
             
-            questionCounterLabel.text = "\(self.questionCounter)/\(questionTexts.count)"
+            questionCtrLabel.text = "\(self.questionCounter)/\(questionTexts.count - 1)"
             
         }
         
-        switch (self.questionCounter) {
-            
-        case 1:
-            
-            self.view.endEditing(true)
+        if (self.questionCounter - 1 == 0) {
             
             previousButton.hidden = true
             
+        } else {
+            
+            previousButton.hidden = false
             faciliationTextLabel.hidden = true
             
-            headerLabel.text = questionTexts[self.questionCounter - 1]
+        }
+        
+        self.surveyView.endEditing(true)
+        
+        headerLabel.text = questionTexts[self.questionCounter - 1]
+        
+        switch (self.questionDisplayTypes[self.questionCounter - 1]) {
             
-            multiLineTextView.removeFromSuperview()
-            starRatingView.removeFromSuperview()
+        case "Scale":
             
             
             // Setting up Rating System
@@ -439,31 +530,7 @@ class CCSurveyViewController: UIViewController, FloatRatingViewDelegate {
                 
             }
             
-        case 2:
-            
-            previousButton.hidden = false
-            
-            self.submitResponse()
-            
-            starRatingView.removeFromSuperview()
-            
-            headerLabel.text = questionTexts[self.questionCounter - 1]
-            
-            for aView in self.surveyView.subviews {
-                
-                if (aView.isKindOfClass(UIButton)) {
-                    
-                    aView.removeFromSuperview()
-                    
-                }
-                
-                if (aView.isKindOfClass(UILabel)) {
-                    
-                    aView.removeFromSuperview()
-                    
-                }
-                
-            }
+        case "MultilineText":
             
             multiLineTextView = UITextView(frame: CGRect(x: 5, y: 100, width: self.surveyView.frame.width - 10, height: self.surveyView.frame.height - 200))
             multiLineTextView.layer.borderColor = UIColor.blackColor().CGColor
@@ -473,26 +540,7 @@ class CCSurveyViewController: UIViewController, FloatRatingViewDelegate {
             
             surveyView.addSubview(multiLineTextView)
             
-            
-        case 3:
-            
-            self.view.endEditing(true)
-            
-            self.submitResponse()
-            
-            headerLabel.text = questionTexts[self.questionCounter - 1]
-            
-            singleLineTextField.removeFromSuperview()
-            
-            for aView in self.surveyView.subviews {
-                
-                if (aView.isKindOfClass(UITextView)) {
-                    
-                    aView.removeFromSuperview()
-                    
-                }
-                
-            }
+        case "Star-5":
             
             let aStarRatingYAlign: CGFloat = (self.surveyView.frame.height - 40) / 2
             
@@ -506,23 +554,7 @@ class CCSurveyViewController: UIViewController, FloatRatingViewDelegate {
             self.surveyView.addSubview(starRatingView)
             
             
-        case 4:
-            
-            self.submitResponse()
-            
-            headerLabel.text = questionTexts[self.questionCounter - 1]
-            
-            for aView in self.surveyView.subviews {
-                
-                if (aView.isKindOfClass(FloatRatingView)) {
-                    
-                    aView.removeFromSuperview()
-                    
-                }
-                
-            }
-            
-            self.surveyView.endEditing(true)
+        case "Text":
             
             let aSingleLineTextFieldY: CGFloat = (self.surveyView.frame.height - 40) / 2
             
@@ -532,34 +564,48 @@ class CCSurveyViewController: UIViewController, FloatRatingViewDelegate {
             
             self.surveyView.addSubview(singleLineTextField)
             
-        case 5:
+        case "Number":
             
-            self.submitResponse()
+            let aSingleLineTextFieldY: CGFloat = (self.surveyView.frame.height - 40) / 2
             
-            headerLabel.text = questionTexts[self.questionCounter - 1]
-            
-            self.surveyView.endEditing(true)
-            
-            singleLineTextField.text = ""
+            singleLineTextField = UITextField(frame: CGRect(x: 5, y: aSingleLineTextFieldY, width: self.surveyView.frame.width - 10, height: 40))
+            singleLineTextField.borderStyle = .Line
             singleLineTextField.keyboardType = .NumberPad
             
-        case 6:
+            self.surveyView.addSubview(singleLineTextField)
             
-            self.submitResponse()
+        case "Smile-5" :
             
-            headerLabel.text = ""
+            let aWidth = self.surveyView.frame.width - 50
+            let aButtonWidth = aWidth / 5
+            let aRatingButtonYAlign: CGFloat = (surveyView.frame.height - aButtonWidth) / 2
             
-            for aView in self.surveyView.subviews {
+            for anIndex in 0 ..< 5 {
                 
-                if (aView.isKindOfClass(UITextField)) {
-                    
-                    aView.removeFromSuperview()
-                    
-                }
+                let aSmileyButton = UIButton(type: .Custom)
+                aSmileyButton.frame = CGRect(x: ((aButtonWidth * CGFloat(anIndex)) + 5) + 22, y: aRatingButtonYAlign, width: aButtonWidth, height: 50)
+                aSmileyButton.tag = anIndex + 1
+                aSmileyButton.setTitle(self.smileyUnicodes[anIndex], forState: .Normal)
+                aSmileyButton.titleLabel?.font = UIFont(name: "Helvetica", size: 18)
+                aSmileyButton.layer.borderColor = UIColor.lightGrayColor().CGColor
+                aSmileyButton.layer.borderWidth = 1.0
+                aSmileyButton.addTarget(self, action: #selector(CCSurveyViewController.smileRatingButtonTapped(_:)), forControlEvents: .TouchUpInside)
+                
+                self.surveyView.addSubview(aSmileyButton)
                 
             }
             
-            questionCounterLabel.removeFromSuperview()
+        case "MultiSelect" :
+            
+            self.setupOptionButtons("MultiSelect")
+            
+        case "Select":
+            
+            self.setupOptionButtons("Select")
+            
+        case "End":
+            
+            questionCtrLabel.removeFromSuperview()
             
             headerView.hidden = true
             footerView.hidden = true
@@ -575,16 +621,164 @@ class CCSurveyViewController: UIViewController, FloatRatingViewDelegate {
             primaryButton.setTitle("CLOSE", forState: .Normal)
             
             surveyView.addSubview(primaryButton)
-            surveyView.addSubview(footerLabel)
             
             footerLabel.hidden = false
-            cloudCherryLogoImageView.hidden = false
+            
+            surveyView.addSubview(footerLabel)
+            
+            let aLogoImage = UIImage(named: "CCLogo", inBundle: NSBundle(forClass: self.dynamicType), compatibleWithTraitCollection: nil)
+            let aLogoImageWidth = (aLogoImage?.size.width)! - 10
+            let aLogoImageHeight = (aLogoImage?.size.height)! - 10
+            
+            cloudCherryLogoImageView = UIImageView(frame: CGRect(x: (surveyView.frame.width - aLogoImageWidth) / 2, y: surveyView.frame.height - 30, width: aLogoImageWidth, height: aLogoImageHeight))
+            cloudCherryLogoImageView.contentMode = .ScaleAspectFit
+            cloudCherryLogoImageView.image = aLogoImage
+            
+            surveyView.addSubview(cloudCherryLogoImageView)
             
             submitButton.setTitle("FINISH", forState: .Normal)
             
         default:
             
             break
+            
+        }
+        
+    }
+    
+    
+    // Sets up Single/Multi Select Buttons
+    
+    
+    func setupOptionButtons(iQuestionDisplayType: String) {
+        
+        var anOptions = [String]()
+        var anOptionButtonY = CGFloat(5)
+        var anOnlyOneLine = true
+        
+        var aFirstButtonTag = 1
+        var aLastButtonTag = 1
+        
+        if (iQuestionDisplayType == "MultiSelect") {
+            
+            anOptions = multiSelectOptions
+            
+        } else {
+            
+            anOptions = singleSelectOptions
+            
+        }
+        
+        let aButtonView = UIView(frame: CGRect(x: 0, y: 50, width: self.surveyView.frame.width, height: self.surveyView.frame.height - 100))
+        
+        for anIndex in 0 ..< anOptions.count {
+            
+            let anOptionButton = UIButton(type: .Custom)
+            anOptionButton.frame = CGRect(x: (self.selectButtonMaxX) + 10, y: anOptionButtonY, width: 50, height: 40)
+            anOptionButton.setTitle(anOptions[anIndex], forState: .Normal)
+            anOptionButton.setTitleColor(UIColor.blackColor(), forState: .Normal)
+            anOptionButton.titleLabel?.font = UIFont(name: "Helvetica", size: 11)
+            anOptionButton.layer.borderColor = UIColor.lightGrayColor().CGColor
+            anOptionButton.layer.borderWidth = 1.0
+            anOptionButton.tag = anIndex + 1
+            
+            anOptionButton.sizeToFit()
+            
+            aLastButtonTag = anIndex + 1
+            
+            let aButtonMaxX = CGRectGetMaxX(anOptionButton.frame)
+            let aButtonWidth = anOptionButton.frame.width
+            
+            anOptionButton.frame = CGRect(x: (self.selectButtonMaxX) + 10, y: anOptionButtonY, width: aButtonWidth + 6, height: 40)
+            
+            aButtonView.addSubview(anOptionButton)
+            
+            if (aButtonMaxX >= (self.surveyView.frame.width - 10)) {
+                
+                anOnlyOneLine = false
+                
+                anOptionButtonY = CGRectGetMaxY(anOptionButton.frame) + 10
+                self.selectButtonMaxX = 0
+                
+                anOptionButton.frame = CGRect(x: (self.selectButtonMaxX) + 10, y: anOptionButtonY, width: aButtonWidth + 6, height: 40)
+                
+                let aLastButton = aButtonView.viewWithTag(aLastButtonTag - 1) as! UIButton
+                let aLastButtonMaxX = CGRectGetMaxX(aLastButton.frame)
+                let aRemainingPadding = self.surveyView.frame.width - aLastButtonMaxX
+                var aNewButtonX = (aRemainingPadding / 2) + 5
+                
+                for anIndex in aFirstButtonTag ..< aLastButtonTag {
+                    
+                    let aButton = aButtonView.viewWithTag(anIndex) as! UIButton
+                    
+                    if (anIndex == aFirstButtonTag) {
+                        
+                        aButton.frame = CGRect(x: aNewButtonX, y: CGRectGetMinY(aButton.frame), width: aButton.frame.width, height: 40)
+                        aNewButtonX = CGRectGetMaxX(aButton.frame) + 10
+                        
+                    } else {
+                        
+                        aButton.frame = CGRect(x: aNewButtonX, y: CGRectGetMinY(aButton.frame), width: aButton.frame.width, height: 40)
+                        aNewButtonX = CGRectGetMaxX(aButton.frame) + 10
+                        
+                    }
+                    
+                    
+                }
+                
+                aFirstButtonTag = aLastButtonTag
+                
+                anOnlyOneLine = true
+                
+            }
+            
+            self.selectButtonMaxX = CGRectGetMaxX(anOptionButton.frame)
+            self.selectButtonMaxY = CGRectGetMaxY(anOptionButton.frame)
+            
+            if (iQuestionDisplayType == "MultiSelect") {
+                
+                anOptionButton.addTarget(self, action: #selector(CCSurveyViewController.multiSelectButtonTapped(_:)), forControlEvents: .TouchUpInside)
+                
+            } else {
+                
+                anOptionButton.addTarget(self, action: #selector(CCSurveyViewController.singleSelectButtonTapped(_:)), forControlEvents: .TouchUpInside)
+                
+            }
+            
+        }
+        
+        let aButtonViewHeight = self.selectButtonMaxY + 5
+        let aButtonViewYAlign: CGFloat = (surveyView.frame.height - aButtonViewHeight) / 2
+        
+        aButtonView.frame = CGRect(x: 0, y: aButtonViewYAlign, width: self.surveyView.frame.width, height: aButtonViewHeight)
+        
+        self.surveyView.addSubview(aButtonView)
+        
+        if (anOnlyOneLine) {
+            
+            let aLastButton = self.surveyView.viewWithTag(aLastButtonTag) as! UIButton
+            let aLastButtonMaxX = CGRectGetMaxX(aLastButton.frame)
+            let aRemainingPadding = self.surveyView.frame.width - aLastButtonMaxX
+            var aNewButtonX = (aRemainingPadding / 2) + 5
+            
+            for anIndex in aFirstButtonTag ..< aLastButtonTag + 1 {
+                
+                let aButton = self.view.viewWithTag(anIndex) as! UIButton
+                
+                if (anIndex == aFirstButtonTag) {
+                    
+                    aButton.frame = CGRect(x: aNewButtonX, y: CGRectGetMinY(aButton.frame), width: aButton.frame.width, height: 40)
+                    aNewButtonX = CGRectGetMaxX(aButton.frame) + 10
+                    
+                } else {
+                    
+                    aButton.frame = CGRect(x: aNewButtonX, y: CGRectGetMinY(aButton.frame), width: aButton.frame.width, height: 40)
+                    aNewButtonX = CGRectGetMaxX(aButton.frame) + 10
+                    
+                }
+                
+                
+            }
             
         }
         
@@ -602,9 +796,11 @@ class CCSurveyViewController: UIViewController, FloatRatingViewDelegate {
         var aSurveyResponseArray: Array<AnyObject> = []
         var aCurrentQuestionAnswered = false
         
-        switch (self.questionCounter) {
+        let anIndex = self.questionCounter - 2
+        
+        switch (self.questionDisplayTypes[self.questionCounter - 2]) {
             
-        case 2:
+        case "Scale":
             
             // NPS Question
             
@@ -612,11 +808,11 @@ class CCSurveyViewController: UIViewController, FloatRatingViewDelegate {
                 
                 aCurrentQuestionAnswered = true
                 
-                aSurveyResponse = ["numberInput" : selectedRating, "questionId" : self.questionIDs[0], "questionText" : self.questionTexts[0]]
+                aSurveyResponse = ["numberInput" : selectedNPSRating, "questionId" : self.questionIDs[anIndex], "questionText" : self.questionTexts[anIndex]]
                 
             }
             
-        case 3:
+        case "MultilineText":
             
             // Multiline Answer
             
@@ -626,11 +822,11 @@ class CCSurveyViewController: UIViewController, FloatRatingViewDelegate {
                 
                 let aResponseText = multiLineTextView.text
                 
-                aSurveyResponse = ["textInput" : aResponseText, "questionId" : self.questionIDs[1], "questionText" : self.questionTexts[1]]
+                aSurveyResponse = ["textInput" : aResponseText, "questionId" : self.questionIDs[anIndex], "questionText" : self.questionTexts[anIndex]]
                 
             }
             
-        case 4:
+        case "Star-5":
             
             // Star Rating Answer
             
@@ -638,11 +834,11 @@ class CCSurveyViewController: UIViewController, FloatRatingViewDelegate {
                 
                 aCurrentQuestionAnswered = true
                 
-                aSurveyResponse = ["numberInput" : selectedRating, "questionId" : self.questionIDs[2], "questionText" : self.questionTexts[2]]
+                aSurveyResponse = ["numberInput" : selectedNPSRating, "questionId" : self.questionIDs[anIndex], "questionText" : self.questionTexts[anIndex]]
                 
             }
             
-        case 5:
+        case "Text":
             
             // Single Line AlphaNumeric Text
             
@@ -650,11 +846,13 @@ class CCSurveyViewController: UIViewController, FloatRatingViewDelegate {
             
                 aCurrentQuestionAnswered = true
                 
-                aSurveyResponse = ["textInput" : singleLineTextField.text!, "questionId" : self.questionIDs[3], "questionText" : self.questionTexts[3]]
+                aSurveyResponse = ["textInput" : singleLineTextField.text!, "questionId" : self.questionIDs[anIndex], "questionText" : self.questionTexts[anIndex]]
+                
+                singleLineTextField.text = ""
                 
             }
             
-        case 6:
+        case "Number":
             
             // Single Line Numeric Text
             
@@ -662,7 +860,61 @@ class CCSurveyViewController: UIViewController, FloatRatingViewDelegate {
                 
                 aCurrentQuestionAnswered = true
             
-                aSurveyResponse = ["textInput" : singleLineTextField.text!, "questionId" : self.questionIDs[4], "questionText" : self.questionTexts[4]]
+                aSurveyResponse = ["textInput" : singleLineTextField.text!, "questionId" : self.questionIDs[anIndex], "questionText" : self.questionTexts[anIndex]]
+                
+                singleLineTextField.text = ""
+                
+            }
+            
+        case "Smile-5" :
+            
+            // Smiley Question
+            
+            if (smileRatingQuestionAnswered) {
+                
+                aCurrentQuestionAnswered = true
+                
+                aSurveyResponse = ["numberInput" : selectedSmileRating, "questionId" : self.questionIDs[anIndex], "questionText" : self.questionTexts[anIndex]]
+                
+            }
+            
+        case "MultiSelect" :
+            
+            // Multi Select Question
+            
+            if (selectedMultiSelectOptions.count != 0) {
+                
+                aCurrentQuestionAnswered = true
+                
+                var selectedMultiOptionsString = ""
+                
+                for anIndex in 0 ..< selectedMultiSelectOptions.count {
+                    
+                    if (anIndex == (selectedMultiSelectOptions.count - 1)) {
+                        
+                        selectedMultiOptionsString += "\(selectedMultiSelectOptions[anIndex])"
+                        
+                    } else {
+                        
+                        selectedMultiOptionsString += "\(selectedMultiSelectOptions[anIndex]),"
+                        
+                    }
+                    
+                }
+                
+                aSurveyResponse = ["textInput" : selectedMultiOptionsString, "questionId" : self.questionIDs[anIndex], "questionText" : self.questionTexts[anIndex]]
+                
+            }
+            
+        case "Select":
+            
+            // Single Select Option
+            
+            if (!selectedSingleSelectOption.isEmpty) {
+                
+                aCurrentQuestionAnswered = true
+                
+                aSurveyResponse = ["textInput" : selectedSingleSelectOption, "questionId" : self.questionIDs[anIndex], "questionText" : self.questionTexts[anIndex]]
                 
             }
             
@@ -725,6 +977,11 @@ class CCSurveyViewController: UIViewController, FloatRatingViewDelegate {
         
         aTaskOne.resume()
         
+        npsQuestionAnswered = false
+        starRatingQuestionAnswered = false
+        smileRatingQuestionAnswered = false
+        tappedButton = UIButton()
+        
     }
     
     
@@ -761,7 +1018,7 @@ class CCSurveyViewController: UIViewController, FloatRatingViewDelegate {
     
     func npsRatingButtonTapped(iButton: UIButton) {
         
-        if let aTappedButton = self.view.viewWithTag(iButton.tag) as? UIButton {
+        if let aTappedNPSButton = self.view.viewWithTag(iButton.tag) as? UIButton {
             
             npsQuestionAnswered = true
             
@@ -775,16 +1032,98 @@ class CCSurveyViewController: UIViewController, FloatRatingViewDelegate {
                 
             }
             
-            aTappedButton.setTitleColor(UIColor.blackColor(), forState: .Normal)
-            aTappedButton.backgroundColor = UIColor.lightGrayColor()
-            aTappedButton.layer.borderColor = UIColor.blackColor().CGColor
-            aTappedButton.layer.borderWidth = 1.0
+            aTappedNPSButton.setTitleColor(UIColor.blackColor(), forState: .Normal)
+            aTappedNPSButton.backgroundColor = UIColor.lightGrayColor()
+            aTappedNPSButton.layer.borderColor = UIColor.blackColor().CGColor
+            aTappedNPSButton.layer.borderWidth = 1.0
             
-            tappedButton = aTappedButton
+            tappedButton = aTappedNPSButton
             
-            selectedRating = iButton.tag - 1
+            selectedNPSRating = iButton.tag - 1
             
         }
+        
+    }
+    
+    
+    // Handles Smile Rating button taps
+    
+    
+    func smileRatingButtonTapped(iButton: UIButton) {
+        
+        if let aTappedSmileButton = self.view.viewWithTag(iButton.tag) as? UIButton {
+            
+            smileRatingQuestionAnswered = true
+            
+            let anIndex = tappedButton.tag - 1
+            
+            if (anIndex != -1) {
+                
+                tappedButton.backgroundColor = UIColor.clearColor()
+                
+            }
+            
+            aTappedSmileButton.backgroundColor = UIColor.lightGrayColor()
+            
+            tappedButton = aTappedSmileButton
+            
+            selectedSmileRating = iButton.tag
+            
+        }
+        
+    }
+    
+    
+    // Handles Single Select button taps
+    
+    
+    func singleSelectButtonTapped(iButton: UIButton) {
+        
+        if let aTappedButton = self.view.viewWithTag(iButton.tag) as? UIButton {
+            
+            tappedButton.backgroundColor = UIColor.whiteColor()
+            tappedButton = iButton
+            
+            aTappedButton.backgroundColor = UIColor(red: 242/255, green: 219/255, blue: 29/255, alpha: 1.0)
+            
+            self.selectedSingleSelectOption = (aTappedButton.titleLabel?.text!)!
+            
+        }
+        
+    }
+    
+    
+    // Handles Multi Select button taps
+    
+    
+    func multiSelectButtonTapped(iButton: UIButton) {
+        
+        if let aTappedButton = self.view.viewWithTag(iButton.tag) as? UIButton {
+            
+            let aSelectedButtonTitle = (aTappedButton.titleLabel?.text!)!
+            
+            if (self.selectedMultiSelectOptions.contains(aSelectedButtonTitle)) {
+                
+                self.removeSelectedString(&self.selectedMultiSelectOptions, iStringToRemove: aSelectedButtonTitle)
+                aTappedButton.backgroundColor = UIColor.whiteColor()
+                print(self.selectedMultiSelectOptions)
+                
+            } else {
+                
+                self.selectedMultiSelectOptions.append(aSelectedButtonTitle)
+                aTappedButton.backgroundColor = UIColor(red: 242/255, green: 219/255, blue: 29/255, alpha: 1.0)
+                print(self.selectedMultiSelectOptions)
+                
+            }
+            
+        }
+        
+    }
+    
+    
+    func removeSelectedString (inout iFromArray: [String], iStringToRemove: String){
+        
+        iFromArray = iFromArray.filter{$0 != iStringToRemove}
         
     }
     

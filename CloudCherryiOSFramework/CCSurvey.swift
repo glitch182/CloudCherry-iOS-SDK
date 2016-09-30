@@ -27,7 +27,8 @@ public class CCSurvey: UIViewController {
     var logoURL = String()
     var logoImage = UIImage()
     
-    var multiSelects = [String]()
+    var singleSelectOptions = [String]()
+    var multiSelectOptions = [String]()
     var ratingTexts = [String]()
     
     var headerColorCode = String()
@@ -127,6 +128,26 @@ public class CCSurvey: UIViewController {
     
     required public init?(coder aDecoder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
+    }
+    
+    
+    /// Sets Config Data
+    
+    
+    public func setConfig(iValidUses: Int, iLocation: String) {
+        
+        if (iValidUses == 0) {
+            
+            _CONFIG_VALID_USES = iValidUses
+            
+        }
+        
+        if (iLocation != "") {
+            
+            _CONFIG_LOCATION = iLocation
+            
+        }
+        
     }
     
     
@@ -276,13 +297,13 @@ public class CCSurvey: UIViewController {
         var aResponseStatus = false
         
         let aRequest = NSMutableURLRequest(URL: NSURL(string: "\(_IP)\(POST_CREATE_SURVEY_TOKEN)")!)
-        let aMessage: Dictionary <String, String>?
+        let aMessage: Dictionary <String, AnyObject>?
         
         aRequest.HTTPMethod = "POST"
         aRequest.addValue("application/json", forHTTPHeaderField: "Content-Type")
         aRequest.addValue("application/json", forHTTPHeaderField: "Accept")
         aRequest.addValue("Bearer \(_ACCESS_TOKEN)", forHTTPHeaderField: "Authorization")
-        aMessage = ["token" : "iostest", "location" : "ios"] as Dictionary <String, String>
+        aMessage = ["token" : "iostest", "location" : _CONFIG_LOCATION, "validUses" : _CONFIG_VALID_USES] as Dictionary <String, AnyObject>
         aRequest.HTTPBody = try! NSJSONSerialization.dataWithJSONObject(aMessage!, options: [])
         
         let aCreateSurveyGroup = dispatch_group_create()
@@ -368,7 +389,7 @@ public class CCSurvey: UIViewController {
                         
                         if let aQuestionTags = aQuestion["questionTags"] as? [String] {
                             
-                            if (aQuestionTags.contains("ios")) {
+                            if (aQuestionTags.contains("ios2")) {
                                 
                                 print(aQuestion)
                                 
@@ -400,11 +421,35 @@ public class CCSurvey: UIViewController {
                                     
                                 }
                                 
+                                
+                                if (aQuestionDisplayType == "Select") {
+                                    
+                                    if let aMultiSelect = aQuestion["multiSelect"] as? [String] {
+                                        
+                                        self.singleSelectOptions = aMultiSelect
+                                        
+                                    }
+                                    
+                                }
+                                
+                                if (aQuestionDisplayType == "MultiSelect") {
+                                    
+                                    if let aMultiSelect = aQuestion["multiSelect"] as? [String] {
+                                        
+                                        self.multiSelectOptions = aMultiSelect
+                                        
+                                    }
+                                    
+                                }
+                                
                             }
                             
                         }
                         
                     }
+                    
+                    self.questionTexts.append("")
+                    self.questionDisplayTypes.append("End")
                     
                     aResponseStatus = true
                     
@@ -458,6 +503,9 @@ public class CCSurvey: UIViewController {
         aSurveyViewController.questionTexts = self.questionTexts
         aSurveyViewController.partialResponseID = self.partialResponseID
         aSurveyViewController.questionDisplayTypes = self.questionDisplayTypes
+        
+        aSurveyViewController.singleSelectOptions = self.singleSelectOptions
+        aSurveyViewController.multiSelectOptions = self.multiSelectOptions
         
         aSurveyViewController.headerColorCode = self.headerColorCode
         aSurveyViewController.footerColorCode = self.footerColorCode
