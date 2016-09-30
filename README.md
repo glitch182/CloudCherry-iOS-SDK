@@ -53,6 +53,26 @@ User can set up their Email ID and Mobile Number as pre-fills, which will be sen
 aSurvey.setPrefill(<Enter Email ID here>, iMobileNumber: <Enter Mobile Number here>)
 ```
 
+**Adding Config options**
+
+User can set up the number of valid uses and location tag
+
+```Swift
+aSurvey.setConfig(<Number of valid uses>, iLocation: <Mobile Number String>)
+```
+
+If you want to configure SDK to capture partial response and create a single use token then pass validUses = 1
+
+If you want to create SurveyToken for unlimited usage then pass validUses = -1
+
+If configuration parameters are not set, then the default value for validUses = -1 and location = null.
+
+**Note:**
+
+- Enabling partial response ensures that the user response is collected after each question and does not wait until the user hits submit button at the end of the survey. This is ideal for mobile app users, as the users may be interrupted by phone calls.
+- Creating unlimited use token is not recommended. This creates junk tokens in your account. 
+
+
 **Triggering Survey**
 
 - Finally start the survey by using the underlying syntax:
