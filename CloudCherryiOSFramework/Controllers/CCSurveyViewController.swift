@@ -80,6 +80,7 @@ class CCSurveyViewController: UIViewController, FloatRatingViewDelegate {
     
     var partialResponseID = String()
     
+    var logoURL = String()
     var logoImage = UIImage()
     
     var ratingTexts = [String]()
@@ -141,76 +142,31 @@ class CCSurveyViewController: UIViewController, FloatRatingViewDelegate {
         super.viewDidLoad()
         
         
-        // Do any additional setup after loading the view.
+        // Hiding Navigation Bar
         
         
-        self.view.backgroundColor = UIColor(red: 0/255, green: 0/255, blue: 0/255, alpha: 0.8)
+        self.navigationController?.setNavigationBarHidden(true, animated: false)
+        
+        
+        SHOW_LOADING((self.navigationController?.view)!, kMessage: "Loading...")
+        
+        if (_IS_USING_STATIC_TOKEN) {
+            
+            self.performSelectorInBackground(#selector(CCSurveyViewController.fetchSurveys), withObject: nil)
+            
+        } else {
+        
+            self.performSelectorInBackground(#selector(CCSurveyViewController.loginUser), withObject: nil)
+            
+        }
+        
+        
+        // Setting Up transparent background
+        
+        
+        self.view.backgroundColor = UIColor(red: 0/255, green: 0/255, blue: 0/255, alpha: 0.0)
         self.view.opaque = false
-        
-        
-        // Setting up Survey View
-        
-        
-        surveyView = UIView(frame: CGRect(x: 20, y: self.view.frame.height / 4, width: self.view.frame.width - 40, height: self.view.frame.height / 2))
-        surveyView.backgroundColor = hexStringToUIColor(backgroundColorCode)
-        
-        self.view.addSubview(surveyView)
-        
-        
-        // Setting up Welcome Text
-        
-        
-        faciliationTextLabel = UILabel(frame: CGRect(x: 0, y: 10, width: surveyView.frame.width, height: 20))
-        faciliationTextLabel.font = UIFont(name: "Helvetica", size: 18)
-        faciliationTextLabel.numberOfLines = 2
-        faciliationTextLabel.textAlignment = .Center
-        faciliationTextLabel.text = self.welcomeText
-        
-        surveyView.addSubview(faciliationTextLabel)
-        
-        
-        // Setting up Primary Button
-        
-        
-        let aPrimaryButtonWidth: CGFloat = 120
-        
-        let aPrimaryButtonXAlign: CGFloat = (surveyView.frame.width - aPrimaryButtonWidth) / 2
-        let aPrimaryButtonYAlign: CGFloat = (surveyView.frame.height - 50) / 2
-        
-        primaryButton = UIButton(frame: CGRect(x: aPrimaryButtonXAlign, y: aPrimaryButtonYAlign, width: aPrimaryButtonWidth, height: 50))
-        primaryButton.backgroundColor = UIColor(red: 213/255, green: 25/255, blue: 44/255, alpha: 1.0)
-        primaryButton.setTitle("CONTINUE", forState: .Normal)
-        primaryButton.titleLabel?.font = UIFont(name: "Helvetica", size: 12)
-        primaryButton.setTitleColor(.whiteColor(), forState: .Normal)
-        primaryButton.addTarget(self, action: #selector(CCSurveyViewController.primaryButtonTapped), forControlEvents: .TouchUpInside)
-        
-        surveyView.addSubview(primaryButton)
-        
-        
-        // Setting up CC Footer
-        
-        
-        footerLabel = UILabel(frame: CGRect(x: 0, y: surveyView.frame.size.height - 50, width: surveyView.frame.width, height: 20))
-        footerLabel.font = UIFont(name: "Helvetica", size: 11)
-        footerLabel.text = "Customer Delight powered by"
-        footerLabel.textAlignment = .Center
-        
-        surveyView.addSubview(footerLabel)
-        
-        
-        // Setting up CloudCherry Logo
-        
-        
-        let aLogoImage = UIImage(named: "CCLogo", inBundle: NSBundle(forClass: self.dynamicType), compatibleWithTraitCollection: nil)
-        let aLogoImageWidth = (aLogoImage?.size.width)! - 10
-        let aLogoImageHeight = (aLogoImage?.size.height)! - 10
-        
-        cloudCherryLogoImageView = UIImageView(frame: CGRect(x: (surveyView.frame.width - aLogoImageWidth) / 2, y: surveyView.frame.height - 30, width: aLogoImageWidth, height: aLogoImageHeight))
-        cloudCherryLogoImageView.contentMode = .ScaleAspectFit
-        cloudCherryLogoImageView.image = aLogoImage
-        
-        surveyView.addSubview(cloudCherryLogoImageView)
-        
+
         
         // Adding Observers for Keyboard Show/Hide
         
@@ -250,8 +206,6 @@ class CCSurveyViewController: UIViewController, FloatRatingViewDelegate {
             if yOffset == 0 {
                 yOffset = self.surveyView.frame.origin.y
                 self.surveyView.frame.origin.y = 20
-            } else {
-                
             }
             
         }
@@ -268,11 +222,247 @@ class CCSurveyViewController: UIViewController, FloatRatingViewDelegate {
             if yOffset != 0 {
                 self.surveyView.frame.origin.y = yOffset
                 yOffset = 0
-            } else {
+            }
+            
+        }
+        
+    }
+    
+    
+    func loginUser() {
+        
+        let anAPI = "\(BASE_URL)\(POST_LOGIN_TOKEN)"
+        let anUsername = ENCODE_STRING(SDKSession.username)
+        let aPassword = ENCODE_STRING(SDKSession.password)
+        
+        let aPostString = "grant_type=password&username=\(anUsername)&password=\(aPassword)"
+        
+        let anURLHandler = CCURLHandler()
+        anURLHandler.initWithURLString(anAPI)
+        
+        let aResponse = anURLHandler.responseForFormURLEncodedString(aPostString)
+        
+        if (aResponse.isKindOfClass(NSDictionary)) {
+            
+            print("LOGIN RESPONSE: \(aResponse)")
+            
+            if let anAccessToken = aResponse["access_token"] as? String {
+                
+                SDKSession.accessToken = "Bearer \(anAccessToken)"
+                
+                self.createSurveyToken()
                 
             }
             
         }
+        
+    }
+    
+    
+    func createSurveyToken() {
+        
+        let anAPI = "\(BASE_URL)\(POST_CREATE_SURVEY_TOKEN)"
+        let aPostDetail = ["token" : "iostest", "location" : SDKSession.location, "validUses" : SDKSession.numberOfValidUses]
+        
+        let anURLHandler = CCURLHandler()
+        anURLHandler.initWithURLString(anAPI)
+        
+        let aResponse = anURLHandler.responseForJSONObject(aPostDetail)
+        
+        if (aResponse.isKindOfClass(NSDictionary)) {
+            
+            print("TOKEN RESPONSE: \(aResponse)")
+            
+            if let aSurveyToken = aResponse["id"] as? String {
+                
+                SDKSession.surveyToken = aSurveyToken
+                
+                self.fetchSurveys()
+                
+            }
+            
+        }
+        
+        
+    }
+    
+    
+    func fetchSurveys() {
+        
+        let anAPI = "\(BASE_URL)\(GET_QUESTIONS_API)"
+        
+        let anURLHandler = CCURLHandler()
+        anURLHandler.initWithURLString(anAPI)
+        
+        let aResponse = anURLHandler.getResponse()
+        
+        if (aResponse.isKindOfClass(NSDictionary)) {
+            
+            print("SURVEY RESPONSE: \(aResponse)")
+            
+            let aQuestions = aResponse["questions"] as! [NSDictionary]
+            self.welcomeText = aResponse["welcomeText"] as! String
+            self.thankYouText = aResponse["thankyouText"] as! String
+            self.partialResponseID = aResponse["partialResponseId"] as! String
+            let aCompleteLogoURL = aResponse["logoURL"] as! String
+            
+            self.headerColorCode = aResponse["colorCode1"] as! String
+            self.footerColorCode = aResponse["colorCode2"] as! String
+            self.backgroundColorCode = aResponse["colorCode3"] as! String
+            
+            let aLogoURLDelimiters = NSCharacterSet(charactersInString: "?")
+            let aLogoURLSplitStrings = aCompleteLogoURL.componentsSeparatedByCharactersInSet(aLogoURLDelimiters)
+            self.logoURL = aLogoURLSplitStrings[0]
+            
+            for aQuestion in aQuestions {
+                
+                if let aQuestionTags = aQuestion["questionTags"] as? [String] {
+                    
+                    if (aQuestionTags.contains("ios2")) {
+                        
+                        print(aQuestion)
+                        
+                        self.questionIDs.append(aQuestion["id"] as! String)
+                        self.questionTexts.append(aQuestion["text"] as! String)
+                        self.questionSequenceNumbers.append(aQuestion["sequence"] as! Int)
+                        
+                        let aQuestionDisplayType = aQuestion["displayType"] as! String
+                        
+                        self.questionDisplayTypes.append(aQuestionDisplayType)
+                        
+                        if (aQuestionDisplayType == "Scale") {
+                            
+                            if let aMultiSelect = aQuestion["multiSelect"] as? [String] {
+                                
+                                let aMultiSelectDelimiters = NSCharacterSet(charactersInString: "-")
+                                let aMultiSelectSplitStrings = aMultiSelect[0].componentsSeparatedByCharactersInSet(aMultiSelectDelimiters)
+                                
+                                for aMultiSelectSplitString in aMultiSelectSplitStrings {
+                                    
+                                    let aDelimiters = NSCharacterSet(charactersInString: ";")
+                                    let aSplitStrings = aMultiSelectSplitString.componentsSeparatedByCharactersInSet(aDelimiters)
+                                    
+                                    self.ratingTexts.append(aSplitStrings[1])
+                                    
+                                }
+                                
+                            }
+                            
+                        }
+                        
+                        
+                        if (aQuestionDisplayType == "Select") {
+                            
+                            if let aMultiSelect = aQuestion["multiSelect"] as? [String] {
+                                
+                                self.singleSelectOptions = aMultiSelect
+                                
+                            }
+                            
+                        }
+                        
+                        if (aQuestionDisplayType == "MultiSelect") {
+                            
+                            if let aMultiSelect = aQuestion["multiSelect"] as? [String] {
+                                
+                                self.multiSelectOptions = aMultiSelect
+                                
+                            }
+                            
+                        }
+                        
+                    }
+                    
+                }
+                
+            }
+            
+            self.questionTexts.append("")
+            self.questionDisplayTypes.append("End")
+            
+            let aLogoDownloadGroup = dispatch_group_create()
+            dispatch_group_enter(aLogoDownloadGroup)
+            
+            self.logoImage = UIImage(data: NSData(contentsOfURL: NSURL(string: logoURL)!)!)!
+            
+            dispatch_group_leave(aLogoDownloadGroup)
+            dispatch_group_wait(aLogoDownloadGroup, DISPATCH_TIME_FOREVER)
+            
+            self.startSurvey()
+            
+        }
+        
+    }
+    
+    
+    func startSurvey() {
+        
+        
+        REMOVE_LOADING()
+        
+        
+        // Setting up Survey View
+        
+        
+        surveyView = UIView(frame: CGRect(x: 20, y: self.view.frame.height / 4, width: self.view.frame.width - 40, height: self.view.frame.height / 2))
+        surveyView.backgroundColor = hexStringToUIColor(backgroundColorCode)
+        
+        self.view.addSubview(surveyView)
+        
+        
+        // Setting up Welcome Text
+        
+        
+        faciliationTextLabel = UILabel(frame: CGRect(x: 0, y: 10, width: surveyView.frame.width, height: 20))
+        faciliationTextLabel.font = HELVETICA_NEUE(18)
+        faciliationTextLabel.numberOfLines = 2
+        faciliationTextLabel.textAlignment = .Center
+        faciliationTextLabel.text = self.welcomeText
+        
+        surveyView.addSubview(faciliationTextLabel)
+        
+        
+        // Setting up Primary Button
+        
+        
+        let aPrimaryButtonWidth: CGFloat = 120
+        
+        let aPrimaryButtonXAlign: CGFloat = (surveyView.frame.width - aPrimaryButtonWidth) / 2
+        let aPrimaryButtonYAlign: CGFloat = (surveyView.frame.height - 50) / 2
+        
+        primaryButton = UIButton(frame: CGRect(x: aPrimaryButtonXAlign, y: aPrimaryButtonYAlign, width: aPrimaryButtonWidth, height: 50))
+        primaryButton.backgroundColor = UIColor(red: 213/255, green: 25/255, blue: 44/255, alpha: 1.0)
+        primaryButton.setTitle("CONTINUE", forState: .Normal)
+        primaryButton.titleLabel?.font = HELVETICA_NEUE(12)
+        primaryButton.setTitleColor(.whiteColor(), forState: .Normal)
+        primaryButton.addTarget(self, action: #selector(CCSurveyViewController.primaryButtonTapped), forControlEvents: .TouchUpInside)
+        
+        surveyView.addSubview(primaryButton)
+        
+        
+        // Setting up CC Footer
+        
+        
+        footerLabel = UILabel(frame: CGRect(x: 0, y: surveyView.frame.size.height - 50, width: surveyView.frame.width, height: 20))
+        footerLabel.font = HELVETICA_NEUE(11)
+        footerLabel.text = "Customer Delight powered by"
+        footerLabel.textAlignment = .Center
+        
+        surveyView.addSubview(footerLabel)
+        
+        
+        // Setting up CloudCherry Logo
+        
+        
+        let aLogoImage = UIImage(named: "CCLogo", inBundle: NSBundle(forClass: self.dynamicType), compatibleWithTraitCollection: nil)
+        let aLogoImageWidth = (aLogoImage?.size.width)! - 10
+        let aLogoImageHeight = (aLogoImage?.size.height)! - 10
+        
+        cloudCherryLogoImageView = UIImageView(frame: CGRect(x: (surveyView.frame.width - aLogoImageWidth) / 2, y: surveyView.frame.height - 30, width: aLogoImageWidth, height: aLogoImageHeight))
+        cloudCherryLogoImageView.contentMode = .ScaleAspectFit
+        cloudCherryLogoImageView.image = aLogoImage
+        
+        surveyView.addSubview(cloudCherryLogoImageView)
         
     }
     
@@ -322,7 +512,7 @@ class CCSurveyViewController: UIViewController, FloatRatingViewDelegate {
             
             headerLabel = UILabel(frame: CGRect(x: 10, y: 15, width: headerView.frame.width - 20, height: 20))
             headerLabel.adjustsFontSizeToFitWidth = true
-            headerLabel.font = UIFont(name: "Helvetica", size: 15)
+            headerLabel.font = HELVETICA_NEUE(15)
             headerLabel.textColor = UIColor.whiteColor()
             headerView.addSubview(headerLabel)
             
@@ -351,7 +541,7 @@ class CCSurveyViewController: UIViewController, FloatRatingViewDelegate {
             
             
             questionCtrLabel = questionCounterLabel(frame: CGRect(x: surveyView.frame.width - 60, y: surveyView.frame.height - 70, width: 50, height: 20))
-            questionCtrLabel.font = UIFont(name: "Helvetica", size: 11)
+            questionCtrLabel.font = HELVETICA_NEUE(11)
             questionCtrLabel.textAlignment = .Right
             
             surveyView.addSubview(questionCtrLabel)
@@ -365,7 +555,7 @@ class CCSurveyViewController: UIViewController, FloatRatingViewDelegate {
             previousButton.backgroundColor = UIColor.lightGrayColor()
             previousButton.setTitle("PREVIOUS", forState: .Normal)
             previousButton.setTitleColor(UIColor.blackColor(), forState: .Normal)
-            previousButton.titleLabel?.font = UIFont(name: "Helvetica", size: 12)
+            previousButton.titleLabel?.font = HELVETICA_NEUE(12)
             previousButton.addTarget(self, action: #selector(CCSurveyViewController.previousButtonTapped), forControlEvents: .TouchUpInside)
             
             footerView.addSubview(previousButton)
@@ -379,7 +569,7 @@ class CCSurveyViewController: UIViewController, FloatRatingViewDelegate {
             submitButton.backgroundColor = UIColor.lightGrayColor()
             submitButton.setTitle("NEXT", forState: .Normal)
             submitButton.setTitleColor(UIColor.blackColor(), forState: .Normal)
-            submitButton.titleLabel?.font = UIFont(name: "Helvetica", size: 12)
+            submitButton.titleLabel?.font = HELVETICA_NEUE(12)
             submitButton.addTarget(self, action: #selector(CCSurveyViewController.nextButtonTapped), forControlEvents: .TouchUpInside)
             
             footerView.addSubview(submitButton)
@@ -388,7 +578,7 @@ class CCSurveyViewController: UIViewController, FloatRatingViewDelegate {
             
         } else {
             
-            self.navigationController?.popToRootViewControllerAnimated(false)
+            self.navigationController?.dismissViewControllerAnimated(true, completion: nil)
             
         }
         
@@ -505,7 +695,7 @@ class CCSurveyViewController: UIViewController, FloatRatingViewDelegate {
                 aRatingButton.setTitleColor(UIColor.whiteColor(), forState: .Normal)
                 aRatingButton.backgroundColor = UIColor(red: red[anIndex], green: green[anIndex], blue: blue[anIndex], alpha: 1.0)
                 aRatingButton.setTitle("\(anIndex)", forState: .Normal)
-                aRatingButton.titleLabel?.font = UIFont(name: "Helvetica", size: 11)
+                aRatingButton.titleLabel?.font = HELVETICA_NEUE(11)
                 aRatingButton.addTarget(self, action: #selector(CCSurveyViewController.npsRatingButtonTapped(_:)), forControlEvents: .TouchUpInside)
                 
                 surveyView.addSubview(aRatingButton)
@@ -516,7 +706,7 @@ class CCSurveyViewController: UIViewController, FloatRatingViewDelegate {
                 
                 let aRatingOneLabel = UILabel(frame: CGRect(x: 5, y: (aRatingButtonYAlign + aButtonWidth + 5), width: 50, height: 20))
                 aRatingOneLabel.text = ratingTexts[0]
-                aRatingOneLabel.font = UIFont(name: "Helvetica", size: 10)
+                aRatingOneLabel.font = HELVETICA_NEUE(10)
                 
                 surveyView.addSubview(aRatingOneLabel)
                 
@@ -524,7 +714,7 @@ class CCSurveyViewController: UIViewController, FloatRatingViewDelegate {
                 let aRatingTwoLabel = UILabel(frame: CGRect(x: surveyView.frame.width - 105, y: (aRatingButtonYAlign + aButtonWidth + 5), width: 100, height: 20))
                 aRatingTwoLabel.textAlignment = .Right
                 aRatingTwoLabel.text = ratingTexts[1]
-                aRatingTwoLabel.font = UIFont(name: "Helvetica", size: 10)
+                aRatingTwoLabel.font = HELVETICA_NEUE(10)
                 
                 surveyView.addSubview(aRatingTwoLabel)
                 
@@ -547,8 +737,19 @@ class CCSurveyViewController: UIViewController, FloatRatingViewDelegate {
             starRatingView = FloatRatingView(frame: CGRect(x: 40, y: aStarRatingYAlign, width: self.surveyView.frame.width - 80, height: 40))
             
             starRatingView.delegate = self
-            starRatingView.emptyImage = UIImage(named: "StarEmpty", inBundle: NSBundle(forClass: self.dynamicType), compatibleWithTraitCollection: nil)
-            starRatingView.fullImage = UIImage(named: "StarFull", inBundle: NSBundle(forClass: self.dynamicType), compatibleWithTraitCollection: nil)
+            
+            var anEmptyImage = UIImage(named: "StarEmpty", inBundle: NSBundle(forClass: self.dynamicType), compatibleWithTraitCollection: nil)
+            var aFullImage = UIImage(named: "StarFull", inBundle: NSBundle(forClass: self.dynamicType), compatibleWithTraitCollection: nil)
+            
+            if ((SDKSession.unselectedStarRatingImage != nil) && (SDKSession.selectedStarRatingImage != nil)) {
+                
+                anEmptyImage = SDKSession.unselectedStarRatingImage
+                aFullImage = SDKSession.selectedStarRatingImage
+                
+            }
+            
+            starRatingView.emptyImage = anEmptyImage
+            starRatingView.fullImage = aFullImage
             starRatingView.contentMode = UIViewContentMode.ScaleAspectFit
             
             self.surveyView.addSubview(starRatingView)
@@ -585,11 +786,32 @@ class CCSurveyViewController: UIViewController, FloatRatingViewDelegate {
                 let aSmileyButton = UIButton(type: .Custom)
                 aSmileyButton.frame = CGRect(x: ((aButtonWidth * CGFloat(anIndex)) + 5) + 22, y: aRatingButtonYAlign, width: aButtonWidth, height: 50)
                 aSmileyButton.tag = anIndex + 1
-                aSmileyButton.setTitle(self.smileyUnicodes[anIndex], forState: .Normal)
-                aSmileyButton.titleLabel?.font = UIFont(name: "Helvetica", size: 18)
-                aSmileyButton.layer.borderColor = UIColor.lightGrayColor().CGColor
-                aSmileyButton.layer.borderWidth = 1.0
                 aSmileyButton.addTarget(self, action: #selector(CCSurveyViewController.smileRatingButtonTapped(_:)), forControlEvents: .TouchUpInside)
+                
+                if ((SDKSession.unselectedSmileyRatingImages != nil) && (SDKSession.selectedSmileyRatingImages != nil)) {
+                    
+                    if ((SDKSession.unselectedSmileyRatingImages!.count == 5) && (SDKSession.selectedSmileyRatingImages!.count == 5)) {
+                        
+                        aSmileyButton.setImage(SDKSession.unselectedSmileyRatingImages![anIndex], forState: .Normal)
+                        aSmileyButton.imageView?.contentMode = .ScaleAspectFit
+                        
+                    } else {
+                        
+                        aSmileyButton.setTitle(self.smileyUnicodes[anIndex], forState: .Normal)
+                        aSmileyButton.titleLabel?.font = HELVETICA_NEUE(25)
+                        aSmileyButton.layer.borderColor = UIColor.lightGrayColor().CGColor
+                        aSmileyButton.layer.borderWidth = 1.0
+                        
+                    }
+                    
+                } else {
+                    
+                    aSmileyButton.setTitle(self.smileyUnicodes[anIndex], forState: .Normal)
+                    aSmileyButton.titleLabel?.font = HELVETICA_NEUE(25)
+                    aSmileyButton.layer.borderColor = UIColor.lightGrayColor().CGColor
+                    aSmileyButton.layer.borderWidth = 1.0
+                    
+                }
                 
                 self.surveyView.addSubview(aSmileyButton)
                 
@@ -677,7 +899,7 @@ class CCSurveyViewController: UIViewController, FloatRatingViewDelegate {
             anOptionButton.frame = CGRect(x: (self.selectButtonMaxX) + 10, y: anOptionButtonY, width: 50, height: 40)
             anOptionButton.setTitle(anOptions[anIndex], forState: .Normal)
             anOptionButton.setTitleColor(UIColor.blackColor(), forState: .Normal)
-            anOptionButton.titleLabel?.font = UIFont(name: "Helvetica", size: 11)
+            anOptionButton.titleLabel?.font = HELVETICA_NEUE(11)
             anOptionButton.layer.borderColor = UIColor.lightGrayColor().CGColor
             anOptionButton.layer.borderWidth = 1.0
             anOptionButton.tag = anIndex + 1
@@ -711,17 +933,8 @@ class CCSurveyViewController: UIViewController, FloatRatingViewDelegate {
                     
                     let aButton = aButtonView.viewWithTag(anIndex) as! UIButton
                     
-                    if (anIndex == aFirstButtonTag) {
-                        
-                        aButton.frame = CGRect(x: aNewButtonX, y: CGRectGetMinY(aButton.frame), width: aButton.frame.width, height: 40)
-                        aNewButtonX = CGRectGetMaxX(aButton.frame) + 10
-                        
-                    } else {
-                        
-                        aButton.frame = CGRect(x: aNewButtonX, y: CGRectGetMinY(aButton.frame), width: aButton.frame.width, height: 40)
-                        aNewButtonX = CGRectGetMaxX(aButton.frame) + 10
-                        
-                    }
+                    aButton.frame = CGRect(x: aNewButtonX, y: CGRectGetMinY(aButton.frame), width: aButton.frame.width, height: 40)
+                    aNewButtonX = CGRectGetMaxX(aButton.frame) + 10
                     
                     
                 }
@@ -765,18 +978,8 @@ class CCSurveyViewController: UIViewController, FloatRatingViewDelegate {
                 
                 let aButton = self.view.viewWithTag(anIndex) as! UIButton
                 
-                if (anIndex == aFirstButtonTag) {
-                    
-                    aButton.frame = CGRect(x: aNewButtonX, y: CGRectGetMinY(aButton.frame), width: aButton.frame.width, height: 40)
-                    aNewButtonX = CGRectGetMaxX(aButton.frame) + 10
-                    
-                } else {
-                    
-                    aButton.frame = CGRect(x: aNewButtonX, y: CGRectGetMinY(aButton.frame), width: aButton.frame.width, height: 40)
-                    aNewButtonX = CGRectGetMaxX(aButton.frame) + 10
-                    
-                }
-                
+                aButton.frame = CGRect(x: aNewButtonX, y: CGRectGetMinY(aButton.frame), width: aButton.frame.width, height: 40)
+                aNewButtonX = CGRectGetMaxX(aButton.frame) + 10
                 
             }
             
@@ -790,7 +993,7 @@ class CCSurveyViewController: UIViewController, FloatRatingViewDelegate {
     
     func submitResponse() {
         
-        let aRequest = NSMutableURLRequest(URL: NSURL(string: "\(_IP)\(POST_ANSWER_PARTIAL)")!)
+        let aRequest = NSMutableURLRequest(URL: NSURL(string: "\(BASE_URL)\(POST_ANSWER_PARTIAL)")!)
         
         var aSurveyResponse = Dictionary<String, AnyObject>()
         var aSurveyResponseArray: Array<AnyObject> = []
@@ -926,15 +1129,15 @@ class CCSurveyViewController: UIViewController, FloatRatingViewDelegate {
         
         if (aCurrentQuestionAnswered) {
             
-            if (!_PREFILL_EMAIL.isEmpty) {
+            if (!SDKSession.prefillEmail.isEmpty) {
                 
-                aSurveyResponse["prefillEmail"] = _PREFILL_EMAIL
+                aSurveyResponse["prefillEmail"] = SDKSession.prefillEmail
                 
             }
             
-            if (!_PREFILL_MOBILE.isEmpty) {
+            if (!SDKSession.prefillMobileNumber.isEmpty) {
                 
-                aSurveyResponse["prefillMobile"] = _PREFILL_MOBILE
+                aSurveyResponse["prefillMobile"] = SDKSession.prefillMobileNumber
                 
             }
             
@@ -1057,13 +1260,41 @@ class CCSurveyViewController: UIViewController, FloatRatingViewDelegate {
             
             let anIndex = tappedButton.tag - 1
             
-            if (anIndex != -1) {
+            if ((SDKSession.unselectedSmileyRatingImages != nil) && (SDKSession.selectedSmileyRatingImages != nil)) {
+            
+                if ((SDKSession.unselectedSmileyRatingImages!.count == 5) && (SDKSession.selectedSmileyRatingImages!.count == 5)) {
+                    
+                    if (anIndex != -1) {
+                        
+                        tappedButton.setImage(SDKSession.unselectedSmileyRatingImages![anIndex], forState: .Normal)
+                        
+                    }
+                    
+                    aTappedSmileButton.setImage(SDKSession.selectedSmileyRatingImages![iButton.tag - 1], forState: .Normal)
+                    
+                } else {
+                    
+                    if (anIndex != -1) {
+                        
+                        tappedButton.backgroundColor = UIColor.clearColor()
+                        
+                    }
+                    
+                    aTappedSmileButton.backgroundColor = UIColor.lightGrayColor()
+                    
+                }
+            
+            } else {
                 
-                tappedButton.backgroundColor = UIColor.clearColor()
+                if (anIndex != -1) {
+                    
+                    tappedButton.backgroundColor = UIColor.clearColor()
+                    
+                }
+                
+                aTappedSmileButton.backgroundColor = UIColor.lightGrayColor()
                 
             }
-            
-            aTappedSmileButton.backgroundColor = UIColor.lightGrayColor()
             
             tappedButton = aTappedSmileButton
             
