@@ -164,7 +164,7 @@ class CCSurveyViewController: UIViewController, FloatRatingViewDelegate {
         // Setting Up transparent background
         
         
-        self.view.backgroundColor = UIColor(red: 0/255, green: 0/255, blue: 0/255, alpha: 0.8)
+        self.view.backgroundColor = UIColor(red: 0/255, green: 0/255, blue: 0/255, alpha: 0.6)
 
         
         // Adding Observers for Keyboard Show/Hide
