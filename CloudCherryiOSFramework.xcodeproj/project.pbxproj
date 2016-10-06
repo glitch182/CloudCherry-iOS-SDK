@@ -10,7 +10,7 @@
 		C9C132081DA25CC90034E7D3 /* Media.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = C9C132071DA25CC90034E7D3 /* Media.xcassets */; };
 		C9C1320C1DA25D200034E7D3 /* FloatRatingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9C1320B1DA25D200034E7D3 /* FloatRatingView.swift */; };
 		C9C1320E1DA25D2F0034E7D3 /* CCSurveyViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9C1320D1DA25D2F0034E7D3 /* CCSurveyViewController.swift */; };
-		C9C132101DA260210034E7D3 /* CloudCherrySDK.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9C1320F1DA260210034E7D3 /* CloudCherrySDK.swift */; };
+		C9C132101DA260210034E7D3 /* SurveyCC.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9C1320F1DA260210034E7D3 /* SurveyCC.swift */; };
 		C9C132121DA260BE0034E7D3 /* CCSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9C132111DA260BE0034E7D3 /* CCSession.swift */; };
 		C9C132151DA264220034E7D3 /* CCLoadingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9C132141DA264220034E7D3 /* CCLoadingView.swift */; };
 		C9C132171DA277270034E7D3 /* CCURLHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9C132161DA277270034E7D3 /* CCURLHandler.swift */; };
@@ -34,7 +34,7 @@
 		C9C132071DA25CC90034E7D3 /* Media.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Media.xcassets; sourceTree = "<group>"; };
 		C9C1320B1DA25D200034E7D3 /* FloatRatingView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = FloatRatingView.swift; sourceTree = "<group>"; };
 		C9C1320D1DA25D2F0034E7D3 /* CCSurveyViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CCSurveyViewController.swift; sourceTree = "<group>"; };
-		C9C1320F1DA260210034E7D3 /* CloudCherrySDK.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CloudCherrySDK.swift; sourceTree = "<group>"; };
+		C9C1320F1DA260210034E7D3 /* SurveyCC.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SurveyCC.swift; sourceTree = "<group>"; };
 		C9C132111DA260BE0034E7D3 /* CCSession.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CCSession.swift; sourceTree = "<group>"; };
 		C9C132141DA264220034E7D3 /* CCLoadingView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CCLoadingView.swift; sourceTree = "<group>"; };
 		C9C132161DA277270034E7D3 /* CCURLHandler.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CCURLHandler.swift; sourceTree = "<group>"; };
@@ -103,7 +103,7 @@
 		C9C132031DA25BF90034E7D3 /* SDK */ = {
 			isa = PBXGroup;
 			children = (
-				C9C1320F1DA260210034E7D3 /* CloudCherrySDK.swift */,
+				C9C1320F1DA260210034E7D3 /* SurveyCC.swift */,
 			);
 			name = SDK;
 			sourceTree = "<group>";
@@ -309,7 +309,7 @@
 			files = (
 				C9C132121DA260BE0034E7D3 /* CCSession.swift in Sources */,
 				C9C1320E1DA25D2F0034E7D3 /* CCSurveyViewController.swift in Sources */,
-				C9C132101DA260210034E7D3 /* CloudCherrySDK.swift in Sources */,
+				C9C132101DA260210034E7D3 /* SurveyCC.swift in Sources */,
 				C9C132171DA277270034E7D3 /* CCURLHandler.swift in Sources */,
 				C9C1320C1DA25D200034E7D3 /* FloatRatingView.swift in Sources */,
 				C9C132151DA264220034E7D3 /* CCLoadingView.swift in Sources */,

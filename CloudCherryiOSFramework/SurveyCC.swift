@@ -1,5 +1,5 @@
 //
-//  CloudCherrySDK.swift
+//  SurveyCC.swift
 //  CloudCherryiOSFramework
 //
 //  Created by Vishal Chandran on 03/10/16.
@@ -8,7 +8,7 @@
 
 import UIKit
 
-public class CloudCherrySDK: NSObject {
+public class SurveyCC: NSObject {
     
     
     /**
@@ -59,23 +59,11 @@ public class CloudCherrySDK: NSObject {
     /**
      Sets prefill details. This method is optional
      
-     - parameter iEmail: Sets EMail prefill string
-     
-     - parameter iMobileNumber: Sets Mobile Number prefill string
+     - parameter iPrefillDictionary: Sets custom prefill key-values
      */
-    public func setPrefill(iEmail: String, iMobileNumber: String) {
+    public func setPrefill(iPrefillDictionary: Dictionary<String, AnyObject>) {
         
-        if (!iEmail.isEmpty) {
-            
-            SDKSession.prefillEmail = iEmail
-            
-        }
-        
-        if (!iMobileNumber.isEmpty) {
-            
-            SDKSession.prefillMobileNumber = iMobileNumber
-            
-        }
+        SDKSession.prefillDictionary = iPrefillDictionary
         
     }
     
@@ -133,6 +121,25 @@ public class CloudCherrySDK: NSObject {
         
     }
     
+    /**
+     Sets Custom Text Style. This method is optional
+     
+     - parameter iStyle: Custom Text Style enum
+     */
+    public func setCustomTextStyle(iStyle: CustomStyleText) {
+        
+        SDKSession.customTextStyle = iStyle
+        
+    }
+    
+    
+    public enum CustomStyleText: String {
+        
+        case CC_RECTANGLE = "Rectangle" // Rectangluar buttons
+        case CC_CIRCLE = "Circle" // Circular buttons
+        
+    }
+    
     
     /**
      Presenting the CloudCherry Survey
@@ -166,8 +173,10 @@ public class CloudCherrySDK: NSObject {
                 SDKSession.rootController = iController
                 
                 let aSurveyController = CCSurveyViewController()
-                aSurveyController.modalPresentationStyle = .OverCurrentContext
                 let aNavigationController = UINavigationController(rootViewController: aSurveyController)
+                aNavigationController.view.backgroundColor = UIColor.clearColor()
+                aNavigationController.view.opaque = false
+                aNavigationController.modalPresentationStyle = .OverCurrentContext
                 
                 iController.presentViewController(aNavigationController, animated: true, completion: nil)
                 

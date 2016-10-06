@@ -164,8 +164,7 @@ class CCSurveyViewController: UIViewController, FloatRatingViewDelegate {
         // Setting Up transparent background
         
         
-        self.view.backgroundColor = UIColor(red: 0/255, green: 0/255, blue: 0/255, alpha: 0.0)
-        self.view.opaque = false
+        self.view.backgroundColor = UIColor(red: 0/255, green: 0/255, blue: 0/255, alpha: 0.8)
 
         
         // Adding Observers for Keyboard Show/Hide
@@ -702,7 +701,7 @@ class CCSurveyViewController: UIViewController, FloatRatingViewDelegate {
                 
             }
             
-            if (ratingTexts.count != 0) {
+            if (ratingTexts.count == 2) {
                 
                 let aRatingOneLabel = UILabel(frame: CGRect(x: 5, y: (aRatingButtonYAlign + aButtonWidth + 5), width: 50, height: 20))
                 aRatingOneLabel.text = ratingTexts[0]
@@ -717,6 +716,60 @@ class CCSurveyViewController: UIViewController, FloatRatingViewDelegate {
                 aRatingTwoLabel.font = HELVETICA_NEUE(10)
                 
                 surveyView.addSubview(aRatingTwoLabel)
+                
+            } else {
+                
+                // Default Scale Legend Colors
+                
+                let aColorOne = hexStringToUIColor("E40021")
+                let aColorTwo = hexStringToUIColor("D4F419")
+                let aColorThree = hexStringToUIColor("348F36")
+                
+                let aLineY = aRatingButtonYAlign + aButtonWidth + 10
+                
+                
+                // Default Scale Legend Lines
+                
+                
+                let aColorLineOne = UIView(frame: CGRect(x: 5, y: aLineY, width: (aButtonWidth * 7), height: 3))
+                aColorLineOne.backgroundColor = aColorOne
+                
+                surveyView.addSubview(aColorLineOne)
+                
+                let aColorLineTwo = UIView(frame: CGRect(x: CGRectGetMaxX(aColorLineOne.frame), y: aLineY, width: (aButtonWidth * 2), height: 3))
+                aColorLineTwo.backgroundColor = aColorTwo
+                
+                surveyView.addSubview(aColorLineTwo)
+                
+                let aColorLineThree = UIView(frame: CGRect(x: CGRectGetMaxX(aColorLineTwo.frame), y: aLineY, width: (aButtonWidth * 2), height: 3))
+                aColorLineThree.backgroundColor = aColorThree
+                
+                surveyView.addSubview(aColorLineThree)
+                
+                
+                // Default Scale Legend Texts
+                
+                
+                let aColorLineOneLabel = UILabel(frame: CGRect(x: 5, y: CGRectGetMaxY(aColorLineOne.frame), width: aColorLineOne.frame.width, height: 20))
+                aColorLineOneLabel.textAlignment = .Center
+                aColorLineOneLabel.font = HELVETICA_NEUE(7)
+                aColorLineOneLabel.text = "Not at all"
+                
+                surveyView.addSubview(aColorLineOneLabel)
+                
+                let aColorLineTwoLabel = UILabel(frame: CGRect(x: CGRectGetMaxX(aColorLineOneLabel.frame), y: CGRectGetMaxY(aColorLineOne.frame), width: aColorLineTwo.frame.width, height: 20))
+                aColorLineTwoLabel.textAlignment = .Center
+                aColorLineTwoLabel.font = HELVETICA_NEUE(7)
+                aColorLineTwoLabel.text = "Maybe"
+                
+                surveyView.addSubview(aColorLineTwoLabel)
+                
+                let aColorLineThreeLabel = UILabel(frame: CGRect(x: CGRectGetMaxX(aColorLineTwoLabel.frame), y: CGRectGetMaxY(aColorLineOne.frame), width: aColorLineThree.frame.width, height: 20))
+                aColorLineThreeLabel.textAlignment = .Center
+                aColorLineThreeLabel.font = HELVETICA_NEUE(7)
+                aColorLineThreeLabel.text = "YES, for sure!"
+                
+                surveyView.addSubview(aColorLineThreeLabel)
                 
             }
             
@@ -895,23 +948,52 @@ class CCSurveyViewController: UIViewController, FloatRatingViewDelegate {
         
         for anIndex in 0 ..< anOptions.count {
             
+            var anOptionButtonWidth = CGFloat()
+            
+            if (SDKSession.customTextStyle == .CC_CIRCLE) {
+                
+                anOptionButtonWidth = 40
+                
+            } else {
+                
+                anOptionButtonWidth = 50
+                
+            }
+            
             let anOptionButton = UIButton(type: .Custom)
-            anOptionButton.frame = CGRect(x: (self.selectButtonMaxX) + 10, y: anOptionButtonY, width: 50, height: 40)
+            anOptionButton.frame = CGRect(x: (self.selectButtonMaxX) + 10, y: anOptionButtonY, width: anOptionButtonWidth, height: 40)
             anOptionButton.setTitle(anOptions[anIndex], forState: .Normal)
             anOptionButton.setTitleColor(UIColor.blackColor(), forState: .Normal)
             anOptionButton.titleLabel?.font = HELVETICA_NEUE(11)
             anOptionButton.layer.borderColor = UIColor.lightGrayColor().CGColor
             anOptionButton.layer.borderWidth = 1.0
+            
             anOptionButton.tag = anIndex + 1
             
-            anOptionButton.sizeToFit()
+            if (SDKSession.customTextStyle == .CC_RECTANGLE) {
+            
+                anOptionButton.sizeToFit()
+                
+            }
             
             aLastButtonTag = anIndex + 1
             
             let aButtonMaxX = CGRectGetMaxX(anOptionButton.frame)
             let aButtonWidth = anOptionButton.frame.width
             
-            anOptionButton.frame = CGRect(x: (self.selectButtonMaxX) + 10, y: anOptionButtonY, width: aButtonWidth + 6, height: 40)
+            var anOptionButtonNewWidth = CGFloat()
+            
+            if (SDKSession.customTextStyle == .CC_RECTANGLE) {
+            
+                anOptionButtonNewWidth = aButtonWidth + 6
+                
+            } else {
+                
+                anOptionButtonNewWidth = 40
+                
+            }
+            
+            anOptionButton.frame = CGRect(x: (self.selectButtonMaxX) + 10, y: anOptionButtonY, width: anOptionButtonNewWidth, height: 40)
             
             aButtonView.addSubview(anOptionButton)
             
@@ -922,7 +1004,7 @@ class CCSurveyViewController: UIViewController, FloatRatingViewDelegate {
                 anOptionButtonY = CGRectGetMaxY(anOptionButton.frame) + 10
                 self.selectButtonMaxX = 0
                 
-                anOptionButton.frame = CGRect(x: (self.selectButtonMaxX) + 10, y: anOptionButtonY, width: aButtonWidth + 6, height: 40)
+                anOptionButton.frame = CGRect(x: (self.selectButtonMaxX) + 10, y: anOptionButtonY, width: anOptionButtonNewWidth, height: 40)
                 
                 let aLastButton = aButtonView.viewWithTag(aLastButtonTag - 1) as! UIButton
                 let aLastButtonMaxX = CGRectGetMaxX(aLastButton.frame)
@@ -934,6 +1016,15 @@ class CCSurveyViewController: UIViewController, FloatRatingViewDelegate {
                     let aButton = aButtonView.viewWithTag(anIndex) as! UIButton
                     
                     aButton.frame = CGRect(x: aNewButtonX, y: CGRectGetMinY(aButton.frame), width: aButton.frame.width, height: 40)
+                    
+                    if (SDKSession.customTextStyle == .CC_CIRCLE) {
+                        
+                        aButton.titleLabel?.adjustsFontSizeToFitWidth = true
+                        aButton.layer.cornerRadius = aButton.frame.width / 2
+                        aButton.titleEdgeInsets = UIEdgeInsets(top: 70, left: 0, bottom: 0, right: 0)
+                        
+                    }
+                    
                     aNewButtonX = CGRectGetMaxX(aButton.frame) + 10
                     
                     
@@ -980,6 +1071,14 @@ class CCSurveyViewController: UIViewController, FloatRatingViewDelegate {
                 
                 aButton.frame = CGRect(x: aNewButtonX, y: CGRectGetMinY(aButton.frame), width: aButton.frame.width, height: 40)
                 aNewButtonX = CGRectGetMaxX(aButton.frame) + 10
+                
+                if (SDKSession.customTextStyle == .CC_CIRCLE) {
+                    
+                    aButton.titleLabel?.adjustsFontSizeToFitWidth = true
+                    aButton.layer.cornerRadius = aButton.frame.width / 2
+                    aButton.titleEdgeInsets = UIEdgeInsets(top: 70, left: 0, bottom: 0, right: 0)
+                    
+                }
                 
             }
             
@@ -1129,15 +1228,13 @@ class CCSurveyViewController: UIViewController, FloatRatingViewDelegate {
         
         if (aCurrentQuestionAnswered) {
             
-            if (!SDKSession.prefillEmail.isEmpty) {
+            if (SDKSession.prefillDictionary != nil) {
                 
-                aSurveyResponse["prefillEmail"] = SDKSession.prefillEmail
-                
-            }
-            
-            if (!SDKSession.prefillMobileNumber.isEmpty) {
-                
-                aSurveyResponse["prefillMobile"] = SDKSession.prefillMobileNumber
+                for (aKey, aValue) in SDKSession.prefillDictionary! {
+                    
+                    aSurveyResponse["\(aKey)"] = "\(aValue)"
+                    
+                }
                 
             }
             

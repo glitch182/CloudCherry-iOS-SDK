@@ -31,14 +31,9 @@ class CCSession: NSObject {
     var password = String()
     
     /**
-     Prefill EMail ID
+     Prefill Dictionary
      */
-    var prefillEmail = ""
-    
-    /**
-     Prefill Mobile Number
-     */
-    var prefillMobileNumber = ""
+    var prefillDictionary: Dictionary<String, AnyObject>?
     
     /**
      Number of valid uses of survey token
@@ -89,6 +84,11 @@ class CCSession: NSObject {
      Image for selected Star Rating
      */
     var selectedStarRatingImage: UIImage?
+    
+    /**
+     Custom Text Style for Single/Multi Select Buttons
+    */
+    var customTextStyle = SurveyCC.CustomStyleText.CC_CIRCLE
     
     
     // MARK: - Public Methods
